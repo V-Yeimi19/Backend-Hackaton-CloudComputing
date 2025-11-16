@@ -64,12 +64,27 @@ def lambda_handler(event, context):
         role = body.get('role')
         area_trabajo = body.get('area_trabajo')
 
-        # Validar que todos los campos existen
-        if not all([nombre_completo, correo, password, role, area_trabajo]):
+        # Validar campos básicos (area_trabajo es opcional para Estudiantes)
+        if not all([nombre_completo, correo, password, role]):
             return {
                 'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
-                    'error': 'Faltan campos requeridos: nombre_completo, correo, password, role, area_trabajo'
+                    'error': 'Faltan campos requeridos: nombre_completo, correo, password, role'
+                })
+            }
+
+        # Si es Estudiante y no se especifica area_trabajo, asignar "student" por defecto
+        if role == 'Estudiante' and not area_trabajo:
+            area_trabajo = 'student'
+
+        # Si es Trabajador, area_trabajo es obligatorio
+        if role == 'Trabajador' and not area_trabajo:
+            return {
+                'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
+                'body': json.dumps({
+                    'error': 'El campo area_trabajo es obligatorio para trabajadores'
                 })
             }
 
@@ -77,6 +92,7 @@ def lambda_handler(event, context):
         if not validar_correo_utec(correo):
             return {
                 'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'El correo debe ser institucional de UTEC (@utec.edu.pe)'
                 })
@@ -86,6 +102,7 @@ def lambda_handler(event, context):
         if role not in ['Estudiante', 'Trabajador']:
             return {
                 'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'El role debe ser "Estudiante" o "Trabajador"'
                 })
@@ -96,6 +113,7 @@ def lambda_handler(event, context):
             if role == 'Estudiante':
                 return {
                     'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json'},
                     'body': json.dumps({
                         'error': 'Los estudiantes deben tener área_trabajo = "student"'
                     })
@@ -103,6 +121,7 @@ def lambda_handler(event, context):
             else:
                 return {
                     'statusCode': 400,
+                    'headers': {'Content-Type': 'application/json'},
                     'body': json.dumps({
                         'error': 'Área de trabajo no válida para trabajadores'
                     })
@@ -119,6 +138,7 @@ def lambda_handler(event, context):
         if 'Item' in response:
             return {
                 'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'El usuario ya está registrado con este correo'
                 })
@@ -145,6 +165,7 @@ def lambda_handler(event, context):
         # Retornar éxito
         return {
             'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({
                 'message': 'Usuario registrado exitosamente',
                 'user_id': user_uuid,
@@ -160,6 +181,7 @@ def lambda_handler(event, context):
         print("Exception:", str(e))
         return {
             'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({
                 'error': str(e)
             })

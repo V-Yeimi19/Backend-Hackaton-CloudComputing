@@ -33,6 +33,7 @@ def lambda_handler(event, context):
         if not token:
             return {
                 'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'Token no proporcionado. Envíalo en el body o en el header Authorization'
                 })
@@ -50,6 +51,7 @@ def lambda_handler(event, context):
         if 'Item' not in response:
             return {
                 'statusCode': 401,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'Token inválido',
                     'valid': False
@@ -67,6 +69,7 @@ def lambda_handler(event, context):
         if fecha_actual > fecha_expiracion:
             return {
                 'statusCode': 401,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'Token expirado',
                     'valid': False,
@@ -82,6 +85,7 @@ def lambda_handler(event, context):
         if 'Item' not in user_response:
             return {
                 'statusCode': 404,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'Usuario no encontrado',
                     'valid': False
@@ -93,6 +97,7 @@ def lambda_handler(event, context):
         # Token válido y activo
         return {
             'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({
                 'message': 'Token válido',
                 'valid': True,
@@ -112,6 +117,7 @@ def lambda_handler(event, context):
         print("Exception:", str(e))
         return {
             'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({
                 'error': str(e),
                 'valid': False

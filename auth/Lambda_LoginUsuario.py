@@ -42,6 +42,7 @@ def lambda_handler(event, context):
         if not correo or not password:
             return {
                 'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'Faltan campos requeridos: correo y password'
                 })
@@ -51,6 +52,7 @@ def lambda_handler(event, context):
         if not validar_correo_utec(correo):
             return {
                 'statusCode': 400,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'El correo debe ser institucional de UTEC (@utec.edu.pe)'
                 })
@@ -71,6 +73,7 @@ def lambda_handler(event, context):
         if 'Item' not in response:
             return {
                 'statusCode': 403,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'Usuario no existe'
                 })
@@ -83,6 +86,7 @@ def lambda_handler(event, context):
         if hashed_password != hashed_password_bd:
             return {
                 'statusCode': 403,
+                'headers': {'Content-Type': 'application/json'},
                 'body': json.dumps({
                     'error': 'Contraseña incorrecta'
                 })
@@ -107,6 +111,7 @@ def lambda_handler(event, context):
         # Retornar éxito con información del usuario
         return {
             'statusCode': 200,
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({
                 'message': 'Login exitoso',
                 'token': token,
@@ -126,6 +131,7 @@ def lambda_handler(event, context):
         print("Exception:", str(e))
         return {
             'statusCode': 500,
+            'headers': {'Content-Type': 'application/json'},
             'body': json.dumps({
                 'error': str(e)
             })
