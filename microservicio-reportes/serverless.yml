@@ -1,4 +1,4 @@
-org: jhoganpachacutec
+org: ${env:ORG}
 service: alerta-utec-reportes
 
 provider:

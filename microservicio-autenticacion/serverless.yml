@@ -1,4 +1,4 @@
-org: yeimivarela
+org: ${env:ORG}
 service: api-authentication
 
 custom:

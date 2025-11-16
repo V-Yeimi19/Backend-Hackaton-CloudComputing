@@ -1,3 +1,4 @@
+org: ${env:ORG}
 service: alerta-utec-realtime
 frameworkVersion: '4'
 
