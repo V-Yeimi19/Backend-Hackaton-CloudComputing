@@ -9,7 +9,7 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: us-east-1
   iam:
-    role: arn:aws:iam::413466751215:role/LabRole
+    role: arn:aws:iam::043280570137:role/LabRole
   environment:
     REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
     ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
@@ -67,7 +67,7 @@ functions:
     events:
       - stream:
           type: dynamodb
-          arn: arn:aws:dynamodb:us-east-1:413466751215:table/alerta-utec-Reporte-${self:provider.stage}/stream/*
+          arn: arn:aws:dynamodb:us-east-1:043280570137:table/alerta-utec-Reporte-dev/stream/2025-11-16T14:04:55.557
           batchSize: 10
           startingPosition: LATEST
           enabled: true
@@ -120,7 +120,7 @@ resources:
       DependsOn: CreateS3FoldersResource
       Properties:
         Name: ${self:service}-crawler-${self:provider.stage}
-        Role: arn:aws:iam::413466751215:role/LabRole
+        Role: arn:aws:iam::043280570137:role/LabRole
         DatabaseName: ${self:provider.environment.GLUE_DATABASE}
         Targets:
           S3Targets:

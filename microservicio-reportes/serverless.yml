@@ -9,7 +9,7 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: us-east-1
   iam:
-    role: arn:aws:iam::413466751215:role/LabRole
+    role: arn:aws:iam::043280570137:role/LabRole
   environment:
     REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
     ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
