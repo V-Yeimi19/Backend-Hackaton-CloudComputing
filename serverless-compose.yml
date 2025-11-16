@@ -1,0 +1,23 @@
+# Serverless Compose Configuration
+# Gestiona múltiples microservicios de AlertaUTEC
+
+services:
+  # Microservicio de Reportes
+  # Responsabilidad: Gestión CRUD de reportes e incidentes
+  reportes:
+    path: microservicio-reportes
+    params:
+      stage: ${opt:stage, 'dev'}
+      region: us-east-1
+
+  # Microservicio de Analítica
+  # Responsabilidad: Análisis de datos, ingesta y consultas
+  # Depende de reportes porque necesita las tablas DynamoDB creadas
+  analitica:
+    path: microservicio-analitica
+    params:
+      stage: ${opt:stage, 'dev'}
+      region: us-east-1
+    dependsOn:
+      - reportes  # Se despliega después de reportes
+
