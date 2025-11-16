@@ -66,7 +66,7 @@ def lambda_handler(event, context):
             'Categoria': body['Categoria'],
             'Gravedad': body['Gravedad'],
             'Lugar': body['Lugar'],
-            'Estado': 'PENDIENTE',  # Estado inicial
+            'Estado': 'Notificado',  # Estado inicial
             'FechaCreacion': timestamp,
             'FechaActualizacion': timestamp
         }
@@ -94,4 +94,3 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({'error': str(e)})
         }
-

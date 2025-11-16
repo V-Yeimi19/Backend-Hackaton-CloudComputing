@@ -5,7 +5,7 @@ provider:
   name: aws
   runtime: python3.13
   memorySize: 1024
-  timeout: 20
+  timeout: 29
   stage: ${opt:stage, 'dev'}
   region: us-east-1
   iam:
@@ -32,25 +32,35 @@ resources:
           IgnorePublicAcls: true
           RestrictPublicBuckets: true
         Tags:
-          Project: AlertaUTEC
-          Microservicio: analitica
+          - Key: Project
+            Value: AlertaUTEC
+          - Key: Microservicio
+            Value: analitica
+
+    # Custom Resource para crear carpetas en S3
+    CreateS3Folders:
+      Type: Custom::S3Folders
+      DependsOn: AnalyticsBucket
+      Properties:
+        ServiceToken: !GetAtt CreateS3FoldersLambda.Arn
+        BucketName: ${self:provider.environment.S3_BUCKET_ANALYTICS}
+        Folders:
+          - reportes/
+          - athena-results/
 
     # Glue Database
     GlueDatabase:
       Type: AWS::Glue::Database
       Properties:
-        CatalogId:
-          Ref: AWS::AccountId
+        CatalogId: !Ref AWS::AccountId
         DatabaseInput:
           Name: ${self:provider.environment.GLUE_DATABASE}
           Description: Database for AlertaUTEC analytics
-        Tags:
-          Project: AlertaUTEC
-          Microservicio: analitica
 
     # Glue Crawler
     GlueCrawler:
       Type: AWS::Glue::Crawler
+      DependsOn: CreateS3Folders
       Properties:
         Name: ${self:service}-crawler-${self:provider.stage}
         Role: arn:aws:iam::413466751215:role/LabRole
@@ -61,9 +71,6 @@ resources:
         SchemaChangePolicy:
           UpdateBehavior: UPDATE_IN_DATABASE
           DeleteBehavior: LOG
-        Tags:
-          Project: AlertaUTEC
-          Microservicio: analitica
 
     # Athena Workgroup
     AthenaWorkgroup:
@@ -78,10 +85,17 @@ resources:
             EncryptionConfiguration:
               EncryptionOption: SSE_S3
         Tags:
-          Project: AlertaUTEC
-          Microservicio: analitica
+          - Key: Project
+            Value: AlertaUTEC
+          - Key: Microservicio
+            Value: analitica
 
 functions:
+  # Lambda que crea carpetas en S3 durante el deploy
+  CreateS3FoldersLambda:
+    handler: utils/createS3Folders.lambda_handler
+    timeout: 60
+
   # ========== ANALÍTICA / PANEL ADMINISTRATIVO ==========
   obtenerReportesActivos:
     handler: analitica/obtenerReportesActivos.lambda_handler
@@ -112,6 +126,7 @@ functions:
 
   consultarAthena:
     handler: analitica/consultarAthena.lambda_handler
+    timeout: 60
     events:
       - http:
           path: /analitica/consultar
@@ -120,15 +135,12 @@ functions:
           integration: lambda-proxy
 
   # ========== INGESTA DE DATOS ==========
-  # NOTA: El StreamArn se obtiene dinámicamente usando el nombre de la tabla
-  # La tabla es creada por el microservicio-reportes
   ingestaDynamoDBToS3:
     handler: ingesta/ingestaDynamoDBToS3.lambda_handler
     events:
       - stream:
           type: dynamodb
-          arn:
-            Fn::ImportValue: alerta-utec-reportes-${self:provider.stage}-ReporteTableStreamArn
+          arn: arn:aws:dynamodb:us-east-1:413466751215:table/alerta-utec-Reporte-${self:provider.stage}/stream/*
           batchSize: 10
           startingPosition: LATEST
           enabled: true
