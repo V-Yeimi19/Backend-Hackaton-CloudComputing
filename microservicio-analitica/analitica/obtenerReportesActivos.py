@@ -14,7 +14,7 @@ def lambda_handler(event, context):
         # Filtrar solo reportes activos (no solucionados)
         reportes_activos = [
             r for r in reportes 
-            if r.get('Estado') in ['PENDIENTE', 'EN ARREGLO']
+            if r.get('Estado') in ['Notificado', 'En Proceso']
         ]
         
         # Ordenar por fecha de creación (más recientes primero)
@@ -41,4 +41,3 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({'error': str(e)})
         }
-

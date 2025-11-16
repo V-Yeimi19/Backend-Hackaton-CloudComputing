@@ -28,11 +28,11 @@ def lambda_handler(event, context):
         estadisticas_gravedad = dict(Counter(gravedades))
         
         # Reportes solucionados vs no solucionados
-        solucionados = len([r for r in reportes if r.get('Estado') == 'SOLUCIONADO'])
+        solucionados = len([r for r in reportes if r.get('Estado') == 'Finalizado'])
         no_solucionados = total_reportes - solucionados
         
-        # Reportes activos (pendientes + en arreglo)
-        activos = len([r for r in reportes if r.get('Estado') in ['PENDIENTE', 'EN ARREGLO']])
+        # Reportes activos (notificados + en proceso)
+        activos = len([r for r in reportes if r.get('Estado') in ['Notificado', 'En Proceso']])
         
         estadisticas = {
             'total_reportes': total_reportes,
@@ -67,4 +67,3 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({'error': str(e)})
         }
-

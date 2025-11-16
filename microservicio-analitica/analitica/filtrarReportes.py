@@ -14,8 +14,19 @@ def lambda_handler(event, context):
         reportes = response.get('Items', [])
         
         # Aplicar filtros
+        estados_validos = ['Notificado', 'En Proceso', 'Finalizado']
+
         if query_params.get('Estado'):
             estado = query_params['Estado']
+            if estado not in estados_validos:
+                return {
+                    'statusCode': 400,
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': f'Estado inválido. Debe ser uno de: {", ".join(estados_validos)}'})
+                }
             reportes = [r for r in reportes if r.get('Estado') == estado]
         
         if query_params.get('Categoria'):
@@ -55,4 +66,3 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({'error': str(e)})
         }
-

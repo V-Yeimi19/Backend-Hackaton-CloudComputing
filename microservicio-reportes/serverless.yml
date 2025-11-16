@@ -113,15 +113,6 @@ functions:
           cors: true
           integration: lambda-proxy
 
-  actualizarReporte:
-    handler: reportes/actualizarReporte.lambda_handler
-    events:
-      - http:
-          path: /reportes/{id}
-          method: put
-          cors: true
-          integration: lambda-proxy
-
   eliminarReporte:
     handler: reportes/eliminarReporte.lambda_handler
     events:

@@ -17,84 +17,11 @@ provider:
     GLUE_DATABASE: alerta-utec-analytics-db
     ATHENA_WORKGROUP: alerta-utec-analytics-workgroup
 
-resources:
-  Resources:
-    # Bucket S3 para Analytics
-    AnalyticsBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:provider.environment.S3_BUCKET_ANALYTICS}
-        VersioningConfiguration:
-          Status: Enabled
-        PublicAccessBlockConfiguration:
-          BlockPublicAcls: true
-          BlockPublicPolicy: true
-          IgnorePublicAcls: true
-          RestrictPublicBuckets: true
-        Tags:
-          - Key: Project
-            Value: AlertaUTEC
-          - Key: Microservicio
-            Value: analitica
-
-    # Custom Resource para crear carpetas en S3
-    CreateS3Folders:
-      Type: Custom::S3Folders
-      DependsOn: AnalyticsBucket
-      Properties:
-        ServiceToken: !GetAtt CreateS3FoldersLambda.Arn
-        BucketName: ${self:provider.environment.S3_BUCKET_ANALYTICS}
-        Folders:
-          - reportes/
-          - athena-results/
-
-    # Glue Database
-    GlueDatabase:
-      Type: AWS::Glue::Database
-      Properties:
-        CatalogId: !Ref AWS::AccountId
-        DatabaseInput:
-          Name: ${self:provider.environment.GLUE_DATABASE}
-          Description: Database for AlertaUTEC analytics
-
-    # Glue Crawler
-    GlueCrawler:
-      Type: AWS::Glue::Crawler
-      DependsOn: CreateS3Folders
-      Properties:
-        Name: ${self:service}-crawler-${self:provider.stage}
-        Role: arn:aws:iam::413466751215:role/LabRole
-        DatabaseName: ${self:provider.environment.GLUE_DATABASE}
-        Targets:
-          S3Targets:
-            - Path: s3://${self:provider.environment.S3_BUCKET_ANALYTICS}/reportes/
-        SchemaChangePolicy:
-          UpdateBehavior: UPDATE_IN_DATABASE
-          DeleteBehavior: LOG
-
-    # Athena Workgroup
-    AthenaWorkgroup:
-      Type: AWS::Athena::WorkGroup
-      Properties:
-        Name: ${self:provider.environment.ATHENA_WORKGROUP}
-        Description: Workgroup for AlertaUTEC analytics queries
-        State: ENABLED
-        WorkGroupConfiguration:
-          ResultConfiguration:
-            OutputLocation: s3://${self:provider.environment.S3_BUCKET_ANALYTICS}/athena-results/
-            EncryptionConfiguration:
-              EncryptionOption: SSE_S3
-        Tags:
-          - Key: Project
-            Value: AlertaUTEC
-          - Key: Microservicio
-            Value: analitica
-
 functions:
   # Lambda que crea carpetas en S3 durante el deploy
-  CreateS3FoldersLambda:
+  createS3Folders:
     handler: utils/createS3Folders.lambda_handler
-    timeout: 60
+    timeout: 29
 
   # ========== ANALÍTICA / PANEL ADMINISTRATIVO ==========
   obtenerReportesActivos:
@@ -126,7 +53,7 @@ functions:
 
   consultarAthena:
     handler: analitica/consultarAthena.lambda_handler
-    timeout: 60
+    timeout: 29
     events:
       - http:
           path: /analitica/consultar
@@ -144,5 +71,78 @@ functions:
           batchSize: 10
           startingPosition: LATEST
           enabled: true
-    timeout: 60
+    timeout: 29
     memorySize: 512
+
+resources:
+  Resources:
+    # Bucket S3 para Analytics
+    AnalyticsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_BUCKET_ANALYTICS}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        Tags:
+          - Key: Project
+            Value: AlertaUTEC
+          - Key: Microservicio
+            Value: analitica
+
+    # Custom Resource para crear carpetas en S3
+    CreateS3FoldersResource:
+      Type: Custom::S3Folders
+      DependsOn: AnalyticsBucket
+      Properties:
+        ServiceToken: !GetAtt CreateS3FoldersLambdaFunction.Arn
+        BucketName: ${self:provider.environment.S3_BUCKET_ANALYTICS}
+        Folders:
+          - reportes/
+          - athena-results/
+
+    # Glue Database
+    GlueDatabase:
+      Type: AWS::Glue::Database
+      Properties:
+        CatalogId: !Ref AWS::AccountId
+        DatabaseInput:
+          Name: ${self:provider.environment.GLUE_DATABASE}
+          Description: Database for AlertaUTEC analytics
+
+    # Glue Crawler
+    GlueCrawler:
+      Type: AWS::Glue::Crawler
+      DependsOn: CreateS3FoldersResource
+      Properties:
+        Name: ${self:service}-crawler-${self:provider.stage}
+        Role: arn:aws:iam::413466751215:role/LabRole
+        DatabaseName: ${self:provider.environment.GLUE_DATABASE}
+        Targets:
+          S3Targets:
+            - Path: s3://${self:provider.environment.S3_BUCKET_ANALYTICS}/reportes/
+        SchemaChangePolicy:
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: LOG
+
+    # Athena Workgroup
+    AthenaWorkgroup:
+      Type: AWS::Athena::WorkGroup
+      Properties:
+        Name: ${self:provider.environment.ATHENA_WORKGROUP}
+        Description: Workgroup for AlertaUTEC analytics queries
+        State: ENABLED
+        WorkGroupConfiguration:
+          ResultConfiguration:
+            OutputLocation: s3://${self:provider.environment.S3_BUCKET_ANALYTICS}/athena-results/
+            EncryptionConfiguration:
+              EncryptionOption: SSE_S3
+        Tags:
+          - Key: Project
+            Value: AlertaUTEC
+          - Key: Microservicio
+            Value: analitica

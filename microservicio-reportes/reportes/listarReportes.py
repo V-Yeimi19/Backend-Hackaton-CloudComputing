@@ -13,6 +13,18 @@ def lambda_handler(event, context):
         estado = query_params.get('Estado')
         categoria = query_params.get('Categoria')
         
+        estados_validos = ['Notificado', 'En Proceso', 'Finalizado']
+
+        if estado and estado not in estados_validos:
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': f'Estado inválido. Debe ser uno de: {", ".join(estados_validos)}'})
+            }
+
         # Escanear todos los reportes (en producción usar índices GSI)
         response = table.scan()
         reportes = response.get('Items', [])
@@ -49,4 +61,3 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({'error': str(e)})
         }
-
