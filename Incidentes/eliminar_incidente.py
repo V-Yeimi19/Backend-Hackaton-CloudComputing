@@ -39,7 +39,7 @@ def _get_dynamodb_tables():
     )
 
 
-def _extract_token_from_headers(headers: dict | None):
+def _extract_token_from_headers(headers):
     if not headers:
         return None
 
@@ -91,6 +91,7 @@ def lambda_handler(event, context):
     try:
         incidentes_table, usuarios_table, tokens_table = _get_dynamodb_tables()
 
+        # 1. Token desde el header
         token = _extract_token_from_headers(event.get("headers"))
         if not token:
             return _response(
@@ -98,13 +99,52 @@ def lambda_handler(event, context):
                 {"message": "Falta header Authorization con el token"},
             )
 
+        # 2. Validar token y obtener usuario
         user_info, error = _validar_token_y_obtener_usuario(
             token, tokens_table, usuarios_table
         )
         if error:
             return _response(401, {"message": error})
 
+        # 3. Verificar rol administrador
         if (user_info.get("rol") or "").lower() != "administrativo":
             return _response(
                 403,
-                {"message": "No tien
+                {"message": "No tiene permisos para eliminar incidentes"},
+            )
+
+        # 4. Obtener id de pathParameters
+        path_params = event.get("pathParameters") or {}
+        incidente_id = path_params.get("id")
+
+        if not incidente_id:
+            return _response(400, {"message": "Falta path parameter 'id'"})
+
+        # 5. Verificar que el incidente exista
+        try:
+            res = incidentes_table.get_item(Key={"id": incidente_id})
+            if "Item" not in res:
+                return _response(404, {"message": "Incidente no encontrado"})
+        except ClientError as e:
+            print("Error leyendo incidente:", e)
+            return _response(500, {"message": "Error interno leyendo incidente"})
+
+        # 6. Eliminar incidente
+        try:
+            incidentes_table.delete_item(Key={"id": incidente_id})
+        except ClientError as e:
+            print("Error eliminando incidente:", e)
+            return _response(500, {"message": "Error interno eliminando incidente"})
+
+        return _response(
+            200,
+            {"message": "Incidente eliminado correctamente", "id": incidente_id},
+        )
+
+    except Exception as e:
+        print("ERROR NO CONTROLADO en eliminarIncidente:", str(e))
+        print(traceback.format_exc())
+        return _response(
+            500,
+            {"message": "Error interno en eliminarIncidente", "detail": str(e)},
+        )
