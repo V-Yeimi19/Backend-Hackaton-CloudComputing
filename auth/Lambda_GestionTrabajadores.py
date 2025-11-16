@@ -53,21 +53,19 @@ def obtener_rol_por_categoria(categoria):
 
 def obtener_trabajador_disponible(tabla_usuarios, rol_requerido):
     """
-    Busca un trabajador disponible con el rol especificado.
-    Retorna el trabajador con menos incidentes asignados activos.
+    Busca un trabajador cuyo area_trabajo coincida con el rol requerido
+    y cuyo role sea 'Trabajador'.
     """
     try:
-        # Escanear la tabla de usuarios buscando trabajadores con el rol específico
         response = tabla_usuarios.scan(
-            FilterExpression='#role = :rol',
-            ExpressionAttributeNames={'#role': 'rol'},
-            ExpressionAttributeValues={':rol': rol_requerido}
+            FilterExpression=Attr("role").eq("Trabajador") & Attr("area_trabajo").eq(rol_requerido)
         )
 
         trabajadores = response.get('Items', [])
 
         if not trabajadores:
             return None
+
         return trabajadores[0]
 
     except Exception as e:
