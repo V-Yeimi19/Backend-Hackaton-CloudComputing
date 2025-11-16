@@ -1,0 +1,104 @@
+service: alerta-utec-realtime
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  stage: production
+
+  iam:
+    role:
+      statements:
+        # Permisos para leer/escribir en la tabla de conexiones
+        - Sid: DynamoConnectionsRW
+          Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:${aws:accountId}:table/${self:custom.connectionsTableName}
+
+        # Permisos para postToConnection en el WebSocket
+        - Sid: ManageWebSocketConnections
+          Effect: Allow
+          Action:
+            - execute-api:ManageConnections
+          Resource:
+            Fn::Join:
+              - ''
+              - - 'arn:aws:execute-api:'
+                - Ref: AWS::Region
+                - ':'
+                - Ref: AWS::AccountId
+                - ':'
+                - Ref: WebsocketsApi
+                - '/'
+                - ${sls:stage}
+                - '/POST/@connections/*'
+
+        # Permisos para invocar lambda de gestionTrabajadores
+        - Sid: InvokeLambdaGestionTrabajadores
+          Effect: Allow
+          Action:
+            - lambda:InvokeFunction
+          Resource:
+            - arn:aws:lambda:${self:provider.region}:${aws:accountId}:function:api-authentication-${sls:stage}-gestionTrabajadores
+
+custom:
+  connectionsTableName: alerta-utec-connections-${sls:stage}
+  incidentesTableName: alerta-utec-Reporte-${sls:stage}
+
+functions:
+  websocketConnect:
+    handler: websocket_connect.lambda_handler
+    environment:
+      CONNECTIONS_TABLE: ${self:custom.connectionsTableName}
+    events:
+      - websocket:
+          route: $connect
+
+  websocketDisconnect:
+    handler: websocket_disconnect.lambda_handler
+    environment:
+      CONNECTIONS_TABLE: ${self:custom.connectionsTableName}
+    events:
+      - websocket:
+          route: $disconnect
+
+  dynamoStreamBroadcast:
+    handler: dynamo_stream_broadcast.lambda_handler
+    environment:
+      CONNECTIONS_TABLE: ${self:custom.connectionsTableName}
+      WS_ENDPOINT:
+        Fn::Join:
+          - ''
+          - - 'https://'
+            - Ref: WebsocketsApi
+            - '.execute-api.'
+            - Ref: AWS::Region
+            - '.amazonaws.com/'
+            - ${sls:stage}
+      LAMBDA_GESTION_TRABAJADORES: api-authentication-${sls:stage}-gestionTrabajadores
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::ImportValue: alerta-utec-reportes-${sls:stage}-ReporteTableStreamArn
+          maximumRetryAttempts: 3
+          startingPosition: LATEST
+
+resources:
+  Resources:
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.connectionsTableName}
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
