@@ -35,7 +35,7 @@ functions:
       - stream:
           type: dynamodb
           # 👇 StreamArn de la MISMA tabla Incidentes
-          arn: arn:aws:dynamodb:us-east-1:645337731455:table/Incidentes/stream/2025-11-16T15:12:50.923
+          arn: arn:aws:dynamodb:us-east-1:645337731455:table/Incidentes/stream/2025-11-16T21:43:18.423
           startingPosition: LATEST
           maximumRetryAttempts: 3
 
