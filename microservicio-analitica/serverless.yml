@@ -1,148 +1,192 @@
-org: jhoganpachacutec
-service: alerta-utec-analitica
+  org: jhoganpachacutec
+  service: alerta-utec-analitica
 
-provider:
-  name: aws
-  runtime: python3.13
-  memorySize: 1024
-  timeout: 29
-  stage: ${opt:stage, 'dev'}
-  region: us-east-1
-  iam:
-    role: arn:aws:iam::043280570137:role/LabRole
-  environment:
-    REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
-    ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
-    S3_BUCKET_ANALYTICS: alerta-utec-analytics-${self:provider.stage}
+  provider:
+    name: aws
+    runtime: python3.13
+    memorySize: 1024
+    timeout: 29
+    stage: ${opt:stage, 'dev'}
+    region: us-east-1
+    iam:
+      role: arn:aws:iam::043280570137:role/LabRole
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:Scan
+            - dynamodb:Query
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - "arn:aws:dynamodb:${self:provider.region}:043280570137:table/alerta-utec-Reporte-${self:provider.stage}"
+            - "arn:aws:dynamodb:${self:provider.region}:043280570137:table/alerta-utec-Reporte-${self:provider.stage}/stream/*"
+            - "arn:aws:dynamodb:${self:provider.region}:043280570137:table/alerta-utec-AsignacionResponsables-${self:provider.stage}"
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:ListBucket
+            - s3:DeleteObject
+          Resource:
+            - "arn:aws:s3:::${self:custom.S3_BUCKET_ANALYTICS}"
+            - "arn:aws:s3:::${self:custom.S3_BUCKET_ANALYTICS}/*"
+        - Effect: Allow
+          Action:
+            - glue:StartCrawler
+            - glue:GetCrawler
+            - glue:GetCrawlers
+            - glue:CreateDatabase
+            - glue:GetDatabase
+            - glue:CreateTable
+            - glue:GetTable
+            - glue:UpdateTable
+            - glue:DeleteTable
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - athena:StartQueryExecution
+            - athena:GetQueryExecution
+            - athena:GetQueryResults
+            - athena:StopQueryExecution
+          Resource: "*"
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:ListBucket
+            - s3:PutObject
+          Resource:
+            - "arn:aws:s3:::${self:custom.S3_BUCKET_ANALYTICS}/athena-results"
+            - "arn:aws:s3:::${self:custom.S3_BUCKET_ANALYTICS}/athena-results/*"
+
+    environment:
+      REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
+      ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
+      S3_BUCKET_ANALYTICS: ${self:custom.S3_BUCKET_ANALYTICS}
+      GLUE_DATABASE: ${self:custom.GLUE_DATABASE}
+      ATHENA_WORKGROUP: ${self:custom.ATHENA_WORKGROUP}
+
+  # ====================
+  # VARIABLES USABLES PARA RESOURCES
+  # ====================
+  custom:
+    S3_BUCKET_ANALYTICS: alerta-utec-analytics-${self:provider.stage}-new
     GLUE_DATABASE: alerta-utec-analytics-db
     ATHENA_WORKGROUP: alerta-utec-analytics-workgroup
 
-functions:
-  # Lambda que crea carpetas en S3 durante el deploy
-  createS3Folders:
-    handler: utils/createS3Folders.lambda_handler
-    timeout: 29
+  functions:
 
-  # ========== ANALÍTICA / PANEL ADMINISTRATIVO ==========
-  obtenerReportesActivos:
-    handler: analitica/obtenerReportesActivos.lambda_handler
-    events:
-      - http:
-          path: /analitica/reportes-activos
-          method: get
-          cors: true
-          integration: lambda-proxy
+    # ========== ANALÍTICA ==========
+    obtenerReportesActivos:
+      handler: analitica/obtenerReportesActivos.lambda_handler
+      events:
+        - http:
+            path: /analitica/reportes-activos
+            method: get
+            cors: true
 
-  filtrarReportes:
-    handler: analitica/filtrarReportes.lambda_handler
-    events:
-      - http:
-          path: /analitica/filtrar
-          method: get
-          cors: true
-          integration: lambda-proxy
+    filtrarReportes:
+      handler: analitica/filtrarReportes.lambda_handler
+      events:
+        - http:
+            path: /analitica/filtrar
+            method: get
+            cors: true
 
-  obtenerEstadisticas:
-    handler: analitica/obtenerEstadisticas.lambda_handler
-    events:
-      - http:
-          path: /analitica/estadisticas
-          method: get
-          cors: true
-          integration: lambda-proxy
+    obtenerEstadisticas:
+      handler: analitica/obtenerEstadisticas.lambda_handler
+      events:
+        - http:
+            path: /analitica/estadisticas
+            method: get
+            cors: true
 
-  consultarAthena:
-    handler: analitica/consultarAthena.lambda_handler
-    timeout: 29
-    events:
-      - http:
-          path: /analitica/consultar
-          method: post
-          cors: true
-          integration: lambda-proxy
+    consultarAthena:
+      handler: analitica/consultarAthena.lambda_handler
+      timeout: 29
+      events:
+        - http:
+            path: /analitica/consultar
+            method: post
+            cors: true
 
-  # ========== INGESTA DE DATOS ==========
-  ingestaDynamoDBToS3:
-    handler: ingesta/ingestaDynamoDBToS3.lambda_handler
-    events:
-      - stream:
-          type: dynamodb
-          arn: arn:aws:dynamodb:us-east-1:043280570137:table/alerta-utec-Reporte-dev/stream/2025-11-16T16:11:36.590
-          batchSize: 10
-          startingPosition: LATEST
-          enabled: true
-    timeout: 29
-    memorySize: 512
+    # ========== INGESTA ==========
+    ingestaDynamoDBToS3:
+      handler: ingesta/ingestaDynamoDBToS3.lambda_handler
+      memorySize: 512
+      timeout: 29
+      events:
+        - stream:
+            type: dynamodb
+            arn: arn:aws:dynamodb:us-east-1:043280570137:table/alerta-utec-Reporte-dev/stream/2025-11-16T16:11:36.590
+            batchSize: 10
+            startingPosition: LATEST
+            enabled: true
 
-resources:
-  Resources:
-    # Bucket S3 para Analytics
-    AnalyticsBucket:
-      Type: AWS::S3::Bucket
-      Properties:
-        BucketName: ${self:provider.environment.S3_BUCKET_ANALYTICS}
-        VersioningConfiguration:
-          Status: Enabled
-        PublicAccessBlockConfiguration:
-          BlockPublicAcls: true
-          BlockPublicPolicy: true
-          IgnorePublicAcls: true
-          RestrictPublicBuckets: true
-        Tags:
-          - Key: Project
-            Value: AlertaUTEC
-          - Key: Microservicio
-            Value: analitica
+  # ====================
+  #   CLOUD FORMATION
+  # ====================
+  resources:
+    Resources:
 
-    # Custom Resource para crear carpetas en S3
-    CreateS3FoldersResource:
-      Type: Custom::S3Folders
-      DependsOn: AnalyticsBucket
-      Properties:
-        ServiceToken: !GetAtt CreateS3FoldersLambdaFunction.Arn
-        BucketName: ${self:provider.environment.S3_BUCKET_ANALYTICS}
-        Folders:
-          - reportes/
-          - athena-results/
+      # ========== S3 BUCKET ==========
+      AnalyticsBucket:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: ${self:custom.S3_BUCKET_ANALYTICS}
+          VersioningConfiguration:
+            Status: Enabled
+          PublicAccessBlockConfiguration:
+            BlockPublicAcls: true
+            BlockPublicPolicy: true
+            IgnorePublicAcls: true
+            RestrictPublicBuckets: true
+          Tags:
+            - Key: Project
+              Value: AlertaUTEC
+            - Key: Microservicio
+              Value: analitica
 
-    # Glue Database
-    GlueDatabase:
-      Type: AWS::Glue::Database
-      Properties:
-        CatalogId: !Ref AWS::AccountId
-        DatabaseInput:
-          Name: ${self:provider.environment.GLUE_DATABASE}
-          Description: Database for AlertaUTEC analytics
+      # ========== GLUE DATABASE ==========
+      GlueDatabase:
+        Type: AWS::Glue::Database
+        Properties:
+          CatalogId: !Ref AWS::AccountId
+          DatabaseInput:
+            Name: ${self:custom.GLUE_DATABASE}
+            Description: Database for AlertaUTEC analytics
 
-    # Glue Crawler
-    GlueCrawler:
-      Type: AWS::Glue::Crawler
-      DependsOn: CreateS3FoldersResource
-      Properties:
-        Name: ${self:service}-crawler-${self:provider.stage}
-        Role: arn:aws:iam::043280570137:role/LabRole
-        DatabaseName: ${self:provider.environment.GLUE_DATABASE}
-        Targets:
-          S3Targets:
-            - Path: s3://${self:provider.environment.S3_BUCKET_ANALYTICS}/reportes/
-        SchemaChangePolicy:
-          UpdateBehavior: UPDATE_IN_DATABASE
-          DeleteBehavior: LOG
+      # ========== GLUE CRAWLER ==========
+      GlueCrawler:
+        Type: AWS::Glue::Crawler
+        DependsOn:
+          - AnalyticsBucket
+        Properties:
+          Name: ${self:service}-crawler-${self:provider.stage}
+          Role: arn:aws:iam::043280570137:role/LabRole
+          DatabaseName: ${self:custom.GLUE_DATABASE}
+          Targets:
+            S3Targets:
+              - Path: s3://${self:custom.S3_BUCKET_ANALYTICS}/reportes/
+          SchemaChangePolicy:
+            UpdateBehavior: UPDATE_IN_DATABASE
+            DeleteBehavior: LOG
 
-    # Athena Workgroup
-    AthenaWorkgroup:
-      Type: AWS::Athena::WorkGroup
-      Properties:
-        Name: ${self:provider.environment.ATHENA_WORKGROUP}
-        Description: Workgroup for AlertaUTEC analytics queries
-        State: ENABLED
-        WorkGroupConfiguration:
-          ResultConfiguration:
-            OutputLocation: s3://${self:provider.environment.S3_BUCKET_ANALYTICS}/athena-results/
-            EncryptionConfiguration:
-              EncryptionOption: SSE_S3
-        Tags:
-          - Key: Project
-            Value: AlertaUTEC
-          - Key: Microservicio
-            Value: analitica
+      # ========== ATHENA WORKGROUP ==========
+      AthenaWorkgroup:
+        Type: AWS::Athena::WorkGroup
+        Properties:
+          Name: ${self:custom.ATHENA_WORKGROUP}
+          Description: Workgroup for AlertaUTEC analytics queries
+          State: ENABLED
+          WorkGroupConfiguration:
+            ResultConfiguration:
+              OutputLocation: s3://${self:custom.S3_BUCKET_ANALYTICS}/athena-results/
+              EncryptionConfiguration:
+                EncryptionOption: SSE_S3
+          Tags:
+            - Key: Project
+              Value: AlertaUTEC
+            - Key: Microservicio
+              Value: analitica
