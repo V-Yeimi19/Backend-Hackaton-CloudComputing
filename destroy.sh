@@ -74,9 +74,28 @@ fi
 print_header "INICIANDO ELIMINACIÓN DE RECURSOS - STAGE: $STAGE"
 
 ################################################################################
-# PASO 1: Eliminar alerta-realtime
+# PASO 1: Eliminar alerta-incidentes-api
 ################################################################################
-print_header "PASO 1/3: Eliminando alerta-realtime"
+print_header "PASO 1/4: Eliminando alerta-incidentes-api"
+
+cd alerta-incidentes-api
+
+print_info "Eliminando stack de alerta-incidentes-api..."
+serverless remove --stage $STAGE --verbose
+
+if [ $? -eq 0 ]; then
+    print_success "alerta-incidentes-api eliminado exitosamente"
+else
+    print_warning "Hubo problemas al eliminar alerta-incidentes-api (puede que no existiera)"
+fi
+
+cd ..
+sleep 3
+
+################################################################################
+# PASO 2: Eliminar alerta-realtime
+################################################################################
+print_header "PASO 2/4: Eliminando alerta-realtime"
 
 cd alerta-realtime
 
@@ -93,9 +112,9 @@ cd ..
 sleep 3
 
 ################################################################################
-# PASO 2: Eliminar auth
+# PASO 3: Eliminar auth
 ################################################################################
-print_header "PASO 2/3: Eliminando auth"
+print_header "PASO 3/4: Eliminando auth"
 
 cd auth
 
@@ -112,9 +131,9 @@ cd ..
 sleep 3
 
 ################################################################################
-# PASO 3: Eliminar microservicio-reportes
+# PASO 4: Eliminar microservicio-reportes
 ################################################################################
-print_header "PASO 3/3: Eliminando microservicio-reportes"
+print_header "PASO 4/4: Eliminando microservicio-reportes"
 
 cd microservicio-reportes
 

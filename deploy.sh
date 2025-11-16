@@ -174,6 +174,40 @@ fi
 
 cd ..
 
+# Esperar para propagación
+print_info "Esperando 5 segundos para propagación de recursos..."
+sleep 5
+
+################################################################################
+# PASO 4: Desplegar alerta-incidentes-api
+################################################################################
+print_header "PASO 4/4: Desplegando alerta-incidentes-api"
+
+cd alerta-incidentes-api
+
+print_info "Verificando serverless.yml..."
+if [ ! -f "serverless.yml" ]; then
+    print_error "No se encontró serverless.yml en alerta-incidentes-api"
+    exit 1
+fi
+
+print_info "Desplegando alerta-incidentes-api en stage '$STAGE'..."
+serverless deploy --stage $STAGE --verbose
+
+if [ $? -eq 0 ]; then
+    print_success "alerta-incidentes-api desplegado exitosamente"
+
+    # Información de las lambdas
+    print_info "Lambdas desplegadas:"
+    print_info "  - alerta-utec-incidentes-api-$STAGE-actualizarEstadoIncidente"
+    print_info "  - alerta-utec-incidentes-api-$STAGE-historialStream"
+else
+    print_error "Falló el despliegue de alerta-incidentes-api"
+    exit 1
+fi
+
+cd ..
+
 ################################################################################
 # RESUMEN FINAL
 ################################################################################
@@ -199,11 +233,16 @@ echo "     - Tabla: alerta-utec-connections-$STAGE"
 echo "     - WebSocket API para notificaciones en tiempo real"
 echo "     - Stream listener para auto-asignación de trabajadores"
 echo ""
+echo "  📊 alerta-incidentes-api ($STAGE):"
+echo "     - API HTTP para actualizar estados de incidentes"
+echo "     - Stream listener para historial de cambios"
+echo ""
 
 print_info "Para obtener información de endpoints, ejecuta:"
 echo "  cd microservicio-reportes && serverless info --stage $STAGE"
 echo "  cd auth && serverless info --stage $STAGE"
 echo "  cd alerta-realtime && serverless info --stage $STAGE"
+echo "  cd alerta-incidentes-api && serverless info --stage $STAGE"
 echo ""
 
 print_info "Para ver logs en tiempo real:"
