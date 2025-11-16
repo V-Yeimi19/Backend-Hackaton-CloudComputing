@@ -3,9 +3,14 @@ service: api-authentication
 
 custom:
   airflowApiUrl:
-    default: https://your-airflow-api-url.com
-    dev: https://your-airflow-api-url.com
-    prod: https://your-airflow-api-url.com
+    default: ${self:custom.apiGatewayUrl.${sls:stage}}
+    dev: ${self:custom.apiGatewayUrl.dev}
+    test: ${self:custom.apiGatewayUrl.test}
+    prod: ${self:custom.apiGatewayUrl.prod}
+  apiGatewayUrl:
+    dev: https://XXXXXX.execute-api.us-east-1.amazonaws.com/dev
+    test: https://XXXXXX.execute-api.us-east-1.amazonaws.com/test
+    prod: https://XXXXXX.execute-api.us-east-1.amazonaws.com/prod
 
 provider:
   name: aws
@@ -17,7 +22,7 @@ provider:
   environment:
     TABLE_USUARIOS: ${sls:stage}-t_usuarios_hack
     TABLE_TOKENS: ${sls:stage}-t_tokens_acceso
-    TABLE_INCIDENTES: alerta-utec-Reporte-${sls:stage}
+    REPORTES_TABLE: alerta-utec-Reporte-${sls:stage}
     AIRFLOW_API_URL: ${self:custom.airflowApiUrl.${sls:stage}, self:custom.airflowApiUrl.default}
     LAMBDA_GESTION_TRABAJADORES: ${self:service}-${sls:stage}-gestionTrabajadores
 
@@ -45,15 +50,6 @@ functions:
     events:
       - http:
           path: /usuario/validate-token
-          method: post
-          cors: true
-          integration: lambda
-
-  crearIncidente:
-    handler: Lambda_CrearIncidente.lambda_handler
-    events:
-      - http:
-          path: /incidente/crear
           method: post
           cors: true
           integration: lambda
@@ -103,18 +99,6 @@ functions:
           cors: true
           integration: lambda
 
-  websocketHandler:
-    handler: Lambda_WebSocketHandler.lambda_handler
-    events:
-      - websocket:
-          route: $connect
-      - websocket:
-          route: $disconnect
-      - websocket:
-          route: $default
-      - websocket:
-          route: nuevoIncidente
-
 resources:
   Resources:
     TablaUsuarios:
@@ -138,17 +122,5 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: token
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-
-    TablaIncidentes:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:provider.environment.TABLE_INCIDENTES}
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST

@@ -81,7 +81,7 @@ def lambda_handler(event, context):
 
         # Conectar a DynamoDB
         dynamodb = boto3.resource('dynamodb')
-        tabla_incidentes = dynamodb.Table(os.environ['TABLE_INCIDENTES'])
+        tabla_incidentes = dynamodb.Table(os.environ['REPORTES_TABLE'])
 
         # Obtener el incidente actual
         response = tabla_incidentes.get_item(Key={'id': incidente_id})

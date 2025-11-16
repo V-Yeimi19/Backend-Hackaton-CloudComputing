@@ -5,7 +5,7 @@ import os
 def lambda_handler(event, context):
     """
     Lambda para obtener el historial de todos los incidentes.
-    Lee desde la tabla TABLE_INCIDENTES y retorna todos los incidentes ordenados por fecha.
+    Lee desde la tabla REPORTES_TABLE y retorna todos los incidentes ordenados por fecha.
     """
     try:
         # Debug: imprimir el evento completo
@@ -13,7 +13,7 @@ def lambda_handler(event, context):
 
         # Conectar a DynamoDB
         dynamodb = boto3.resource('dynamodb')
-        tabla_incidentes = dynamodb.Table(os.environ['TABLE_INCIDENTES'])
+        tabla_incidentes = dynamodb.Table(os.environ['REPORTES_TABLE'])
 
         # Obtener todos los incidentes
         response = tabla_incidentes.scan()
