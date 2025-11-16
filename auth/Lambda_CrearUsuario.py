@@ -55,7 +55,7 @@ def lambda_handler(event, context):
             body = event
 
         # Debug: imprimir el body parseado
-        print("Body parseado:", json.dumps(body))
+        print("Body parseado:", body)
 
         # Obtener los campos requeridos
         nombre_completo = body.get('nombre_completo')
@@ -68,10 +68,9 @@ def lambda_handler(event, context):
         if not all([nombre_completo, correo, password, role]):
             return {
                 'statusCode': 400,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'Faltan campos requeridos: nombre_completo, correo, password, role'
-                })
+                }
             }
 
         # Si es Estudiante y no se especifica area_trabajo, asignar "student" por defecto
@@ -82,30 +81,27 @@ def lambda_handler(event, context):
         if role == 'Trabajador' and not area_trabajo:
             return {
                 'statusCode': 400,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'El campo area_trabajo es obligatorio para trabajadores'
-                })
+                }
             }
 
         # Validar correo institucional
         if not validar_correo_utec(correo):
             return {
                 'statusCode': 400,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'El correo debe ser institucional de UTEC (@utec.edu.pe)'
-                })
+                }
             }
 
         # Validar role
         if role not in ['Estudiante', 'Trabajador']:
             return {
                 'statusCode': 400,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'El role debe ser "Estudiante" o "Trabajador"'
-                })
+                }
             }
 
         # Validar área de trabajo según el rol
@@ -113,18 +109,16 @@ def lambda_handler(event, context):
             if role == 'Estudiante':
                 return {
                     'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json'},
-                    'body': json.dumps({
+                    'body': {
                         'error': 'Los estudiantes deben tener área_trabajo = "student"'
-                    })
+                    }
                 }
             else:
                 return {
                     'statusCode': 400,
-                    'headers': {'Content-Type': 'application/json'},
-                    'body': json.dumps({
+                    'body': {
                         'error': 'Área de trabajo no válida para trabajadores'
-                    })
+                    }
                 }
 
         # Conectar DynamoDB
@@ -138,10 +132,9 @@ def lambda_handler(event, context):
         if 'Item' in response:
             return {
                 'statusCode': 400,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'El usuario ya está registrado con este correo'
-                })
+                }
             }
 
         # Generar UUID automático
@@ -165,15 +158,14 @@ def lambda_handler(event, context):
         # Retornar éxito
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({
+            'body': {
                 'message': 'Usuario registrado exitosamente',
                 'user_id': user_uuid,
                 'correo': correo,
                 'nombre_completo': nombre_completo,
                 'role': role,
                 'area_trabajo': area_trabajo
-            })
+            }
         }
 
     except Exception as e:
@@ -181,8 +173,7 @@ def lambda_handler(event, context):
         print("Exception:", str(e))
         return {
             'statusCode': 500,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({
+            'body': {
                 'error': str(e)
-            })
+            }
         }
