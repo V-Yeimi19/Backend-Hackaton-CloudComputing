@@ -1,0 +1,393 @@
+{
+	"info": {
+		"_postman_id": "alerta-utec-api",
+		"name": "AlertaUTEC - API Backend",
+		"description": "Colección completa de endpoints para el backend de AlertaUTEC - Gestión de reportes e incidentes del campus universitario",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Reportes",
+			"item": [
+				{
+					"name": "Crear Reporte",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"UsuarioId\": \"USER123\",\n  \"DescripcionCorta\": \"Fuga de agua en el baño del segundo piso\",\n  \"Categoria\": \"Fugas\",\n  \"Gravedad\": \"fuerte\",\n  \"Lugar\": \"Edificio A, Segundo piso, Baño 201\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reportes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes"
+							]
+						},
+						"description": "Crea un nuevo reporte de incidente. Campos requeridos: UsuarioId, DescripcionCorta, Categoria, Gravedad, Lugar.\n\nCategorías válidas: Limpieza y desorden, Fugas, Calidad del inmobiliario, Calidad de lo servicios (Luz, Internet, Agua), Aulas cerradas, Objeto perdido\n\nGravedad válida: debil, moderado, fuerte"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Reporte",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/{{reporte_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"{{reporte_id}}"
+							]
+						},
+						"description": "Obtiene un reporte específico por su ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Reportes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes?UsuarioId={{usuario_id}}&Estado={{estado}}&Categoria={{categoria}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes"
+							],
+							"query": [
+								{
+									"key": "UsuarioId",
+									"value": "{{usuario_id}}",
+									"description": "Filtrar por ID de usuario",
+									"disabled": true
+								},
+								{
+									"key": "Estado",
+									"value": "{{estado}}",
+									"description": "Filtrar por estado: PENDIENTE, EN ARREGLO, SOLUCIONADO",
+									"disabled": true
+								},
+								{
+									"key": "Categoria",
+									"value": "{{categoria}}",
+									"description": "Filtrar por categoría",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Lista todos los reportes. Opcionalmente puede filtrar por UsuarioId, Estado o Categoria usando query parameters"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Reporte",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"DescripcionCorta\": \"Fuga de agua corregida - descripción actualizada\",\n  \"Gravedad\": \"moderado\",\n  \"Lugar\": \"Edificio A, Segundo piso, Baño 201 - Ubicación actualizada\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reportes/{{reporte_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"{{reporte_id}}"
+							]
+						},
+						"description": "Actualiza un reporte existente. Puedes actualizar: DescripcionCorta, Categoria, Gravedad, Lugar"
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Reporte",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/{{reporte_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"{{reporte_id}}"
+							]
+						},
+						"description": "Elimina un reporte y sus asignaciones relacionadas"
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Estado Reporte",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"Estado\": \"EN ARREGLO\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reportes/{{reporte_id}}/estado",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"{{reporte_id}}",
+								"estado"
+							]
+						},
+						"description": "Actualiza el estado de un reporte. Estados válidos: PENDIENTE, EN ARREGLO, SOLUCIONADO"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestión completa de reportes (CRUD)"
+		},
+		{
+			"name": "Asignaciones",
+			"item": [
+				{
+					"name": "Asignar Responsables",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"TrabajadoresId\": [\"WORKER001\", \"WORKER002\", \"WORKER003\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reportes/{{reporte_id}}/asignar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"{{reporte_id}}",
+								"asignar"
+							]
+						},
+						"description": "Asigna uno o más trabajadores responsables a un reporte. TrabajadoresId debe ser una lista de IDs"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Responsables",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/{{reporte_id}}/responsables",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"{{reporte_id}}",
+								"responsables"
+							]
+						},
+						"description": "Obtiene la lista de trabajadores asignados a un reporte específico"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gestión de asignaciones de responsables a reportes"
+		},
+		{
+			"name": "Analítica",
+			"item": [
+				{
+					"name": "Obtener Reportes Activos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/analitica/reportes-activos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"analitica",
+								"reportes-activos"
+							]
+						},
+						"description": "Obtiene todos los reportes activos (estado PENDIENTE o EN ARREGLO)"
+					},
+					"response": []
+				},
+				{
+					"name": "Filtrar Reportes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/analitica/filtrar?Estado={{estado}}&Categoria={{categoria}}&Gravedad={{gravedad}}&Lugar={{lugar}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"analitica",
+								"filtrar"
+							],
+							"query": [
+								{
+									"key": "Estado",
+									"value": "{{estado}}",
+									"description": "Filtrar por estado: PENDIENTE, EN ARREGLO, SOLUCIONADO",
+									"disabled": true
+								},
+								{
+									"key": "Categoria",
+									"value": "{{categoria}}",
+									"description": "Filtrar por categoría específica",
+									"disabled": true
+								},
+								{
+									"key": "Gravedad",
+									"value": "{{gravedad}}",
+									"description": "Filtrar por gravedad: debil, moderado, fuerte",
+									"disabled": true
+								},
+								{
+									"key": "Lugar",
+									"value": "{{lugar}}",
+									"description": "Buscar por texto en el campo Lugar",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Filtra reportes por múltiples criterios. Puedes combinar filtros: Estado, Categoria, Gravedad, Lugar"
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Estadísticas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/analitica/estadisticas",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"analitica",
+								"estadisticas"
+							]
+						},
+						"description": "Obtiene estadísticas generales:\n- Total de reportes\n- Reportes por estado\n- Reportes por categoría\n- Reportes por gravedad\n- Categoría con más reportes\n- Reportes solucionados vs no solucionados\n- Tasa de solución"
+					},
+					"response": []
+				},
+				{
+					"name": "Consultar Athena",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"query\": \"SELECT categoria, COUNT(*) as total FROM reportes GROUP BY categoria ORDER BY total DESC\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/analitica/consultar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"analitica",
+								"consultar"
+							]
+						},
+						"description": "Ejecuta una consulta SQL personalizada en Athena sobre los datos catalogados en Glue. Ejemplo: SELECT categoria, COUNT(*) FROM reportes GROUP BY categoria"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para panel administrativo y análisis de datos"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://YOUR_API_ID.execute-api.us-east-1.amazonaws.com/dev",
+			"type": "string",
+			"description": "URL base de la API. Reemplazar YOUR_API_ID con el ID real después de hacer serverless deploy"
+		},
+		{
+			"key": "reporte_id",
+			"value": "",
+			"type": "string",
+			"description": "ID de un reporte existente (se obtiene al crear un reporte)"
+		},
+		{
+			"key": "usuario_id",
+			"value": "USER123",
+			"type": "string",
+			"description": "ID de usuario para filtrar reportes"
+		},
+		{
+			"key": "estado",
+			"value": "PENDIENTE",
+			"type": "string",
+			"description": "Estado del reporte: PENDIENTE, EN ARREGLO, SOLUCIONADO"
+		},
+		{
+			"key": "categoria",
+			"value": "Fugas",
+			"type": "string",
+			"description": "Categoría del reporte"
+		},
+		{
+			"key": "gravedad",
+			"value": "fuerte",
+			"type": "string",
+			"description": "Gravedad: debil, moderado, fuerte"
+		},
+		{
+			"key": "lugar",
+			"value": "Edificio A",
+			"type": "string",
+			"description": "Texto para buscar en el campo Lugar"
+		}
+	]
+}
+

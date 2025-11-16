@@ -1,0 +1,149 @@
+org: jhoganpachacutec
+service: alerta-utec-analitica
+
+provider:
+  name: aws
+  runtime: python3.13
+  memorySize: 1024
+  timeout: 30
+  region: us-east-1
+  iam:
+    role:
+      Fn::Sub:
+        - "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+  environment:
+    REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
+    ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
+    S3_BUCKET_ANALYTICS: alerta-utec-analytics-${self:provider.stage}
+    GLUE_DATABASE: alerta-utec-analytics-db
+    ATHENA_WORKGROUP: alerta-utec-analytics-workgroup
+
+resources:
+  Resources:
+    # Bucket S3 para Analytics
+    AnalyticsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.S3_BUCKET_ANALYTICS}
+        VersioningConfiguration:
+          Status: Enabled
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        Tags:
+          - Key: Project
+            Value: AlertaUTEC
+          - Key: Microservicio
+            Value: analitica
+
+    # Glue Database
+    GlueDatabase:
+      Type: AWS::Glue::Database
+      Properties:
+        CatalogId:
+          Ref: AWS::AccountId
+        DatabaseInput:
+          Name: ${self:provider.environment.GLUE_DATABASE}
+          Description: Database for AlertaUTEC analytics
+        Tags:
+          - Key: Project
+            Value: AlertaUTEC
+          - Key: Microservicio
+            Value: analitica
+
+    # Glue Crawler
+    GlueCrawler:
+      Type: AWS::Glue::Crawler
+      Properties:
+        Name: ${self:service}-crawler-${self:provider.stage}
+        Role:
+          Fn::Sub:
+            - "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+        DatabaseName: ${self:provider.environment.GLUE_DATABASE}
+        Targets:
+          S3Targets:
+            - Path: s3://${self:provider.environment.S3_BUCKET_ANALYTICS}/reportes/
+        SchemaChangePolicy:
+          UpdateBehavior: UPDATE_IN_DATABASE
+          DeleteBehavior: LOG
+        Tags:
+          - Key: Project
+            Value: AlertaUTEC
+          - Key: Microservicio
+            Value: analitica
+
+    # Athena Workgroup
+    AthenaWorkgroup:
+      Type: AWS::Athena::WorkGroup
+      Properties:
+        Name: ${self:provider.environment.ATHENA_WORKGROUP}
+        Description: Workgroup for AlertaUTEC analytics queries
+        State: ENABLED
+        WorkGroupConfiguration:
+          ResultConfiguration:
+            OutputLocation: s3://${self:provider.environment.S3_BUCKET_ANALYTICS}/athena-results/
+            EncryptionConfiguration:
+              EncryptionOption: SSE_S3
+        Tags:
+          - Key: Project
+            Value: AlertaUTEC
+          - Key: Microservicio
+            Value: analitica
+
+functions:
+  # ========== ANALÍTICA / PANEL ADMINISTRATIVO ==========
+  obtenerReportesActivos:
+    handler: analitica/obtenerReportesActivos.lambda_handler
+    events:
+      - http:
+          path: /analitica/reportes-activos
+          method: get
+          cors: true
+          integration: lambda-proxy
+
+  filtrarReportes:
+    handler: analitica/filtrarReportes.lambda_handler
+    events:
+      - http:
+          path: /analitica/filtrar
+          method: get
+          cors: true
+          integration: lambda-proxy
+
+  obtenerEstadisticas:
+    handler: analitica/obtenerEstadisticas.lambda_handler
+    events:
+      - http:
+          path: /analitica/estadisticas
+          method: get
+          cors: true
+          integration: lambda-proxy
+
+  consultarAthena:
+    handler: analitica/consultarAthena.lambda_handler
+    events:
+      - http:
+          path: /analitica/consultar
+          method: post
+          cors: true
+          integration: lambda-proxy
+
+  # ========== INGESTA DE DATOS ==========
+  # NOTA: El StreamArn se obtiene dinámicamente usando el nombre de la tabla
+  # La tabla es creada por el microservicio-reportes
+  ingestaDynamoDBToS3:
+    handler: ingesta/ingestaDynamoDBToS3.lambda_handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::Sub:
+              - "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:provider.environment.REPORTES_TABLE}/stream/*"
+          batchSize: 10
+          startingPosition: LATEST
+          enabled: true
+    timeout: 60
+    memorySize: 512
+
