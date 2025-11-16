@@ -81,7 +81,7 @@ print_header "PASO 1/3: Eliminando alerta-realtime"
 cd alerta-realtime
 
 print_info "Eliminando stack de alerta-realtime..."
-serverless remove --stage production --verbose
+serverless remove --stage $STAGE --verbose
 
 if [ $? -eq 0 ]; then
     print_success "alerta-realtime eliminado exitosamente"

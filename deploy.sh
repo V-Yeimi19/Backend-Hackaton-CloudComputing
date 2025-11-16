@@ -158,11 +158,8 @@ if [ ! -f "serverless.yml" ]; then
     exit 1
 fi
 
-# Nota: alerta-realtime usa 'production' como stage por defecto
-# Necesitamos ajustar esto para que use el mismo stage
-print_warning "alerta-realtime usa stage 'production' en su configuración"
-print_info "Desplegando alerta-realtime en stage 'production'..."
-serverless deploy --stage production --verbose
+print_info "Desplegando alerta-realtime en stage '$STAGE'..."
+serverless deploy --stage $STAGE --verbose
 
 if [ $? -eq 0 ]; then
     print_success "alerta-realtime desplegado exitosamente"
@@ -197,8 +194,8 @@ echo "     - Tabla: $STAGE-t_tokens_acceso"
 echo "     - Endpoints HTTP para autenticación y gestión"
 echo "     - Airflow simulator endpoints"
 echo ""
-echo "  🔔 alerta-realtime (production):"
-echo "     - Tabla: alerta-utec-connections-production"
+echo "  🔔 alerta-realtime ($STAGE):"
+echo "     - Tabla: alerta-utec-connections-$STAGE"
 echo "     - WebSocket API para notificaciones en tiempo real"
 echo "     - Stream listener para auto-asignación de trabajadores"
 echo ""
@@ -206,7 +203,7 @@ echo ""
 print_info "Para obtener información de endpoints, ejecuta:"
 echo "  cd microservicio-reportes && serverless info --stage $STAGE"
 echo "  cd auth && serverless info --stage $STAGE"
-echo "  cd alerta-realtime && serverless info --stage production"
+echo "  cd alerta-realtime && serverless info --stage $STAGE"
 echo ""
 
 print_info "Para ver logs en tiempo real:"
