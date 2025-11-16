@@ -1,0 +1,78 @@
+service: alerta-utec-incidentes
+frameworkVersion: '4'
+
+org: darosv
+app: alerta-utec
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  stage: production
+
+  iam:
+    role: arn:aws:iam::645337731455:role/LabRole
+
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedMethods:
+        - OPTIONS
+        - GET
+        - POST
+        - DELETE
+      allowedHeaders:
+        - '*'
+
+custom:
+  incidentesTableName: tabla_incidentes
+  usuariosTableName: tabla_usuarios
+  tokensTableName: tokens_acceso
+
+functions:
+  crearIncidente:
+    handler: crear_incidente.lambda_handler
+    environment:
+      INCIDENTES_TABLE: ${self:custom.incidentesTableName}
+      USUARIOS_TABLE: ${self:custom.usuariosTableName}
+      TOKENS_TABLE: ${self:custom.tokensTableName}
+    events:
+      - httpApi:
+          path: /incidentes
+          method: post
+
+  eliminarIncidente:
+    handler: eliminar_incidente.lambda_handler
+    environment:
+      INCIDENTES_TABLE: ${self:custom.incidentesTableName}
+      USUARIOS_TABLE: ${self:custom.usuariosTableName}
+      TOKENS_TABLE: ${self:custom.tokensTableName}
+    events:
+      - httpApi:
+          path: /incidentes/{id}
+          method: delete
+
+  validarToken:
+    handler: validar_token.lambda_handler
+    environment:
+      USUARIOS_TABLE: ${self:custom.usuariosTableName}
+      TOKENS_TABLE: ${self:custom.tokensTableName}
+    events:
+      - httpApi:
+          path: /validar-token
+          method: post
+
+resources:
+  Resources:
+    TablaIncidentes:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.incidentesTableName}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
