@@ -21,22 +21,22 @@ def lambda_handler(event, context):
         print("Body parseado:", body)
 
         # Obtener los campos requeridos
-        incidente_id = body.get('incidente_id')
-        nuevo_estado = body.get('estado')
-        comentario = body.get('comentario', '')  # Opcional
+        incidente_id = body.get('id')
+        nuevo_status = body.get('status')
+        resolved_by = body.get('resolvedBy')  # Opcional, solo cuando status = 'Finalizado'
 
         # Validar campos obligatorios
-        if not all([incidente_id, nuevo_estado]):
+        if not all([incidente_id, nuevo_status]):
             return {
                 'statusCode': 400,
                 'body': {
-                    'error': 'Faltan campos requeridos: incidente_id, estado'
+                    'error': 'Faltan campos requeridos: id, status'
                 }
             }
 
         # Validar estados permitidos
-        estados_validos = ['notificado', 'en_proceso', 'resuelto']
-        if nuevo_estado not in estados_validos:
+        estados_validos = ['Notificado', 'En Proceso', 'Finalizado']
+        if nuevo_status not in estados_validos:
             return {
                 'statusCode': 400,
                 'body': {
@@ -61,42 +61,52 @@ def lambda_handler(event, context):
                 }
             }
 
-        incidente = response['Item']
+        # Fecha y hora actual en formato ISO
+        updated_at = datetime.now().isoformat()
 
-        # Fecha y hora actual
-        fecha_actualizacion = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Crear nueva entrada en el historial de estados
-        nueva_entrada_historial = {
-            'estado': nuevo_estado,
-            'fecha': fecha_actualizacion,
-            'comentario': comentario or f'Estado cambiado a {nuevo_estado}'
+        # Preparar la expresión de actualización
+        update_expression = 'SET #status = :status, updatedAt = :updated_at'
+        expression_attribute_values = {
+            ':status': nuevo_status,
+            ':updated_at': updated_at
+        }
+        expression_attribute_names = {
+            '#status': 'status'
         }
 
-        # Obtener el historial actual y agregar la nueva entrada
-        historial_estados = incidente.get('historial_estados', [])
-        historial_estados.append(nueva_entrada_historial)
+        # Si el estado es "Finalizado", agregar resolvedAt y resolvedBy
+        if nuevo_status == 'Finalizado':
+            update_expression += ', resolvedAt = :resolved_at'
+            expression_attribute_values[':resolved_at'] = updated_at
+
+            if resolved_by:
+                update_expression += ', resolvedBy = :resolved_by'
+                expression_attribute_values[':resolved_by'] = resolved_by
 
         # Actualizar el incidente
         tabla_historial.update_item(
             Key={'id': incidente_id},
-            UpdateExpression='SET estado = :estado, fecha_actualizacion = :fecha, historial_estados = :historial',
-            ExpressionAttributeValues={
-                ':estado': nuevo_estado,
-                ':fecha': fecha_actualizacion,
-                ':historial': historial_estados
-            }
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values,
+            ExpressionAttributeNames=expression_attribute_names
         )
 
         # Retornar éxito
+        response_body = {
+            'message': 'Incidente actualizado exitosamente',
+            'id': incidente_id,
+            'status': nuevo_status,
+            'updatedAt': updated_at
+        }
+
+        if nuevo_status == 'Finalizado':
+            response_body['resolvedAt'] = updated_at
+            if resolved_by:
+                response_body['resolvedBy'] = resolved_by
+
         return {
             'statusCode': 200,
-            'body': {
-                'message': 'Incidente actualizado exitosamente',
-                'incidente_id': incidente_id,
-                'nuevo_estado': nuevo_estado,
-                'fecha_actualizacion': fecha_actualizacion
-            }
+            'body': response_body
         }
 
     except Exception as e:

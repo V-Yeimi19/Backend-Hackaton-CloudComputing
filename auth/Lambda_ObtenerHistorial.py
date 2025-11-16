@@ -17,7 +17,8 @@ def lambda_handler(event, context):
         incidentes = response.get('Items', [])
 
         # Ordenar por fecha de creación (más recientes primero)
-        incidentes.sort(key=lambda x: x.get('fecha_creacion', ''), reverse=True)
+        # Usar createdAt en lugar de fecha_creacion
+        incidentes.sort(key=lambda x: x.get('createdAt', ''), reverse=True)
 
         # Retornar lista completa de incidentes con toda su información
         return {

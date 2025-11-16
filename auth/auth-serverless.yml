@@ -41,6 +41,15 @@ functions:
           cors: true
           integration: lambda
 
+  crearIncidente:
+    handler: Lambda_CrearIncidente.lambda_handler
+    events:
+      - http:
+          path: /incidente/crear
+          method: post
+          cors: true
+          integration: lambda
+
   actualizarIncidente:
     handler: Lambda_ActualizarIncidente.lambda_handler
     events:
