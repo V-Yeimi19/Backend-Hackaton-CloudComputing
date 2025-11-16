@@ -200,6 +200,7 @@
         Type: AWS::Glue::Crawler
         DependsOn:
           - AnalyticsBucket
+          - GlueDatabase
         Properties:
           Name: ${self:service}-crawler-${self:provider.stage}
           Role: arn:aws:iam::${env:AWS_ACCOUNT_ID}:role/LabRole
