@@ -75,7 +75,7 @@
   custom:
     S3_BUCKET_ANALYTICS: alerta-utec-analytics-${self:provider.stage}-new
     GLUE_DATABASE: alerta-utec-analytics-db
-    ATHENA_WORKGROUP: alerta-utec-analytics-workgroup
+    ATHENA_WORKGROUP: alerta-utec-analytics-workgroup-${self:provider.stage}
 
   functions:
     # ========== ANALÍTICA ==========
