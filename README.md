@@ -1,282 +1,207 @@
-# AlertaUTEC - Backend Serverless
+# Backend-Hackaton-CloudComputing
+Este repositorio contiene el backend utilizado para la hackatón del curso de Cloud Computing durante el ciclo 2025-2
+# parte de websocket
+Buenísimo, ya tienes todo el backend armado, así que ahora es “solo” escuchar y pintar 😎
 
-Backend completamente serverless para la plataforma AlertaUTEC, desarrollado para la hackatón del curso de Cloud Computing durante el ciclo 2025-2.
+Te enseño dos cosas:
 
-## Descripción
+1. **Cómo conectarte al WebSocket desde el frontend.**
+2. **Cómo usar esos mensajes para refrescar una tabla automáticamente.**
 
-AlertaUTEC es una plataforma que permite reportar, gestionar y dar seguimiento a incidentes dentro del campus universitario en tiempo real. Este backend implementa:
+Voy a asumir que usas **React**, pero te dejo también la versión “JS puro”.
 
-- **Gestión de Reportes**: CRUD completo para reportes de incidentes
-- **Panel Administrativo**: Funciones de analítica y visualización de datos
-- **Ingesta de Datos**: Pipeline automatizado DynamoDB → S3 → Glue → Athena
+---
 
-## Arquitectura
+## 1. Conexión básica al WebSocket (React)
 
-- **Runtime**: Python 3.13
-- **Framework**: Serverless Framework
-- **Base de datos**: DynamoDB (tablas `Reporte` y `AsignacionResponsables`)
-- **API**: API Gateway con integración Lambda
-- **Almacenamiento**: S3 para datos de analítica
-- **Catalogación**: AWS Glue
-- **Consultas SQL**: AWS Athena
-- **Event Processing**: DynamoDB Streams
+Primero, crea un pequeño helper para la conexión:
 
-## Estructura del Proyecto
+```js
+// wsClient.js
+export function connectToIncidentesWebSocket(onMessage) {
+  // Pon aquí la URL que te devuelve `sls deploy`
+  const WS_URL = "wss://dz0y9xvmal.execute-api.us-east-1.amazonaws.com/production";
 
-```
-Backend-Hackaton-CloudComputing/
-├── reportes/
-│   ├── crearReporte.py
-│   ├── obtenerReporte.py
-│   ├── listarReportes.py
-│   ├── actualizarReporte.py
-│   ├── eliminarReporte.py
-│   ├── actualizarEstadoReporte.py
-│   ├── asignarResponsables.py
-│   ├── obtenerResponsables.py
-│   └── __init__.py
-├── analitica/
-│   ├── obtenerReportesActivos.py
-│   ├── filtrarReportes.py
-│   ├── obtenerEstadisticas.py
-│   ├── consultarAthena.py
-│   └── __init__.py
-├── ingesta/
-│   ├── ingestaDynamoDBToS3.py
-│   └── __init__.py
-├── serverless.yml
-├── requirements.txt
-├── .gitignore
-└── README.md
-```
+  const ws = new WebSocket(WS_URL);
 
-## Tablas DynamoDB
+  ws.onopen = () => {
+    console.log("✅ WebSocket conectado");
+  };
 
-### Tabla: Reporte
+  ws.onclose = (event) => {
+    console.log("❌ WebSocket cerrado", event.code, event.reason);
+    // Aquí podrías intentar reconectar si quieres
+  };
 
-- **Partition Key**: `id` (String) - UUID único del reporte
-- **Atributos**:
-  - `UsuarioId` (String): ID del usuario que creó el reporte
-  - `DescripcionCorta` (String): Descripción breve del incidente
-  - `Categoria` (String): Categoría del incidente
-    - Limpieza y desorden
-    - Fugas
-    - Calidad del inmobiliario
-    - Calidad de lo servicios (Luz, Internet, Agua)
-    - Aulas cerradas
-    - Objeto perdido
-  - `Gravedad` (String): Nivel de urgencia (debil, moderado, fuerte)
-  - `Lugar` (String): Ubicación del incidente
-  - `Estado` (String): Estado del reporte (PENDIENTE, EN ARREGLO, SOLUCIONADO)
-  - `FechaCreacion` (String): Timestamp ISO de creación
-  - `FechaActualizacion` (String): Timestamp ISO de última actualización
-- **Stream**: Habilitado (NEW_AND_OLD_IMAGES)
+  ws.onerror = (err) => {
+    console.error("⚠️ Error en WebSocket", err);
+  };
 
-### Tabla: AsignacionResponsables
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      onMessage(msg);
+    } catch (e) {
+      console.error("Mensaje WS inválido:", event.data);
+    }
+  };
 
-- **Partition Key**: `ReporteId` (String) - ID del reporte
-- **Atributos**:
-  - `TrabajadoresId` (List): Lista de IDs de trabajadores asignados
-
-## Endpoints API
-
-### Reportes
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/reportes` | Crear un nuevo reporte |
-| GET | `/reportes` | Listar todos los reportes (con filtros opcionales) |
-| GET | `/reportes/{id}` | Obtener un reporte específico |
-| PUT | `/reportes/{id}` | Actualizar un reporte |
-| DELETE | `/reportes/{id}` | Eliminar un reporte |
-| PATCH | `/reportes/{id}/estado` | Actualizar el estado de un reporte |
-| POST | `/reportes/{id}/asignar` | Asignar responsables a un reporte |
-| GET | `/reportes/{id}/responsables` | Obtener responsables asignados a un reporte |
-
-### Analítica / Panel Administrativo
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/analitica/reportes-activos` | Obtener todos los reportes activos (PENDIENTE, EN ARREGLO) |
-| GET | `/analitica/filtrar` | Filtrar reportes por múltiples criterios |
-| GET | `/analitica/estadisticas` | Obtener estadísticas generales |
-| POST | `/analitica/consultar` | Ejecutar consulta SQL personalizada en Athena |
-
-## Instalación y Despliegue
-
-### Requisitos Previos
-
-- Node.js y npm instalados
-- Serverless Framework: `npm install -g serverless`
-- Credenciales AWS configuradas
-- Python 3.13
-- Rol IAM `LabRole` con permisos para:
-  - DynamoDB (lectura, escritura, streams)
-  - S3 (lectura, escritura)
-  - Glue (lectura, escritura)
-  - Athena (ejecutar consultas)
-
-### Despliegue
-
-```bash
-# Instalar dependencias
-npm install
-
-# Desplegar a AWS
-serverless deploy
-
-# Desplegar solo una función específica
-serverless deploy function -f crearReporte
-
-# Ver logs en tiempo real
-serverless logs -f crearReporte -t
-```
-
-## Ejemplos de Uso
-
-### Crear un Reporte
-
-```bash
-curl -X POST https://your-api-url/reportes \
-  -H "Content-Type: application/json" \
-  -d '{
-    "UsuarioId": "USER123",
-    "DescripcionCorta": "Fuga de agua en el baño del segundo piso",
-    "Categoria": "Fugas",
-    "Gravedad": "fuerte",
-    "Lugar": "Edificio A, Segundo piso, Baño 201"
-  }'
-```
-
-### Listar Reportes con Filtros
-
-```bash
-# Por estado
-curl "https://your-api-url/reportes?Estado=PENDIENTE"
-
-# Por categoría
-curl "https://your-api-url/reportes?Categoria=Fugas"
-
-# Por usuario
-curl "https://your-api-url/reportes?UsuarioId=USER123"
-```
-
-### Actualizar Estado de un Reporte
-
-```bash
-curl -X PATCH https://your-api-url/reportes/{id}/estado \
-  -H "Content-Type: application/json" \
-  -d '{
-    "Estado": "EN ARREGLO"
-  }'
-```
-
-### Asignar Responsables
-
-```bash
-curl -X POST https://your-api-url/reportes/{id}/asignar \
-  -H "Content-Type: application/json" \
-  -d '{
-    "TrabajadoresId": ["WORKER001", "WORKER002"]
-  }'
-```
-
-### Obtener Estadísticas
-
-```bash
-curl https://your-api-url/analitica/estadisticas
-```
-
-Respuesta ejemplo:
-```json
-{
-  "total_reportes": 150,
-  "por_estado": {
-    "PENDIENTE": 45,
-    "EN ARREGLO": 30,
-    "SOLUCIONADO": 75
-  },
-  "por_categoria": {
-    "Fugas": 50,
-    "Limpieza y desorden": 40,
-    "Calidad del inmobiliario": 30,
-    ...
-  },
-  "categoria_mas_reportes": {
-    "categoria": "Fugas",
-    "cantidad": 50
-  },
-  "solucionados": 75,
-  "no_solucionados": 75,
-  "activos": 75,
-  "tasa_solucion": 50.0
+  return ws;
 }
 ```
 
-### Consultar Athena
+---
 
-```bash
-curl -X POST https://your-api-url/analitica/consultar \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "SELECT categoria, COUNT(*) as total FROM reportes GROUP BY categoria ORDER BY total DESC"
-  }'
+## 2. Componente React que se mantiene sincronizado
+
+Este componente:
+
+* Hace un **fetch inicial** (REST) de los incidentes (puedes apuntarlo a tu API HTTP).
+* Se conecta al WebSocket.
+* Cada vez que llega un mensaje del stream (`eventName`, `newImage`, `oldImage`),
+  actualiza el estado `incidentes`.
+* El usuario solo ve que la tabla “se mueve” sola.
+
+```jsx
+// ListaIncidentes.jsx
+import { useEffect, useState } from "react";
+import { connectToIncidentesWebSocket } from "./wsClient";
+
+export default function ListaIncidentes() {
+  const [incidentes, setIncidentes] = useState([]);
+
+  useEffect(() => {
+    // 1. Cargar la data inicial (ajusta la URL a tu API REST)
+    fetch("https://tu-api-rest.com/incidentes")
+      .then((res) => res.json())
+      .then((data) => {
+        // data debe ser un array de incidentes [{id, titulo, estado, ...}]
+        setIncidentes(data);
+      })
+      .catch((err) => console.error("Error cargando incidentes:", err));
+
+    // 2. Conectar al WebSocket
+    const ws = connectToIncidentesWebSocket((msg) => {
+      console.log("📩 Mensaje WS:", msg);
+
+      const { eventName, newImage, oldImage } = msg;
+
+      // INSERT → agregamos
+      if (eventName === "INSERT" && newImage) {
+        setIncidentes((prev) => {
+          // evitar duplicados si ya estaba
+          if (prev.some((i) => i.id === newImage.id)) return prev;
+          return [...prev, newImage];
+        });
+      }
+
+      // MODIFY → reemplazamos el incidente
+      if (eventName === "MODIFY" && newImage) {
+        setIncidentes((prev) =>
+          prev.map((i) => (i.id === newImage.id ? newImage : i))
+        );
+      }
+
+      // REMOVE → lo sacamos de la lista
+      if (eventName === "REMOVE" && oldImage) {
+        setIncidentes((prev) =>
+          prev.filter((i) => i.id !== oldImage.id)
+        );
+      }
+    });
+
+    // 3. Limpiar cuando se desmonte el componente
+    return () => {
+      ws.close();
+    };
+  }, []);
+
+  return (
+    <div>
+      <h2>Incidentes en tiempo real</h2>
+      <table border="1" cellPadding="4">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Título</th>
+            <th>Estado</th>
+            <th>Ubicación</th>
+            <th>Urgencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          {incidentes.map((inc) => (
+            <tr key={inc.id}>
+              <td>{inc.id}</td>
+              <td>{inc.titulo}</td>
+              <td>{inc.estado}</td>
+              <td>{inc.ubicacion || "-"}</td>
+              <td>{inc.urgencia || "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 ```
 
-## Pipeline de Ingesta de Datos
+👉 Fíjate que:
 
-El sistema implementa un pipeline automatizado para análisis de datos:
+* **No hay notificaciones, ni alerts, ni toasts.**
+  El mensaje se usa solo para mantener el `state` actualizado.
+* Cada vez que tu backend toque la tabla `Incidentes`, el stream manda un mensaje → el componente lo procesa → la tabla se re-renderiza sola.
 
-1. **DynamoDB Streams**: Captura cambios en la tabla `Reporte` (INSERT, MODIFY)
-2. **Lambda (ingestaDynamoDBToS3)**: Procesa los eventos del stream y guarda los datos en S3 con particionado por fecha/hora
-3. **S3**: Almacena los datos en formato JSON particionado: `reportes/year=YYYY/month=MM/day=DD/hour=HH/`
-4. **Glue Crawler**: Catalogación automática de los datos en S3
-5. **Athena**: Permite ejecutar consultas SQL sobre los datos catalogados
+---
 
-### Estructura de Datos en S3
+## 3. Versión ultra simple en HTML + JS puro
 
+Si quieres probar sin React, algo mínimo:
+
+```html
+<!DOCTYPE html>
+<html>
+  <body>
+    <h2>Incidentes en tiempo real</h2>
+    <pre id="log"></pre>
+
+    <script>
+      const log = (msg) => {
+        document.getElementById("log").textContent += msg + "\n";
+      };
+
+      const WS_URL =
+        "wss://dz0y9xvmal.execute-api.us-east-1.amazonaws.com/production";
+
+      const ws = new WebSocket(WS_URL);
+
+      ws.onopen = () => log("✅ Conectado");
+      ws.onclose = () => log("❌ Desconectado");
+      ws.onerror = (e) => log("⚠️ Error: " + e.message);
+
+      ws.onmessage = (event) => {
+        log("📩 " + event.data);
+        // Aquí podrías parsear el JSON y actualizar el DOM:
+        // const msg = JSON.parse(event.data);
+      };
+    </script>
+  </body>
+</html>
 ```
-s3://alerta-utec-backend-analytics-dev/
-└── reportes/
-    └── year=2025/
-        └── month=01/
-            └── day=15/
-                └── hour=14/
-                    └── 2025-01-15T14:30:00-uuid.json
-```
 
-## Validaciones Implementadas
+Ahí verías en `log` exactamente lo que ya viste en el tester, pero desde tu propia página.
 
-### Reportes
+---
 
-- Campos requeridos: `UsuarioId`, `DescripcionCorta`, `Categoria`, `Gravedad`, `Lugar`
-- Categoría debe ser una de las 6 categorías válidas
-- Gravedad debe ser: `debil`, `moderado`, o `fuerte`
-- Estado debe ser: `PENDIENTE`, `EN ARREGLO`, o `SOLUCIONADO`
+## 4. Resumen
 
-### Asignaciones
+* El **backend ya hace el trabajo duro**:
+  DynamoDB Stream → Lambda → WebSocket → mensaje `{eventName, newImage, oldImage}` a todos.
+* En el **frontend**:
 
-- `TrabajadoresId` debe ser una lista
-- El reporte debe existir antes de asignar responsables
+  * Te conectas al WebSocket con la URL del API (`wss://.../production`).
+  * Escuchas `onmessage`.
+  * Usas el contenido del mensaje para actualizar tu estado (`useState`) o el DOM.
+* Con eso, cada cambio en la tabla se refleja automáticamente en la UI, sin que el usuario toque nada.
 
-## Notas Técnicas
-
-- Las funciones Lambda tienen 256MB de memoria y 30 segundos de timeout (excepto ingesta que tiene 512MB y 60s)
-- CORS está habilitado en todos los endpoints HTTP
-- Las tablas DynamoDB se crean automáticamente con el despliegue
-- El bucket S3 se crea automáticamente con versionado habilitado
-- El Glue Database y Crawler se crean automáticamente
-- El Athena Workgroup se crea automáticamente
-- DynamoDB Streams está habilitado en la tabla `Reporte` para la ingesta
-
-## Próximos Pasos
-
-- Implementar índices GSI en DynamoDB para consultas más eficientes
-- Agregar autenticación y autorización (Cognito)
-- Implementar WebSockets para actualizaciones en tiempo real
-- Integrar Apache Airflow para orquestación de tareas
-- Implementar visualizaciones con AWS SageMaker
-
-## Licencia
-
-Ver archivo LICENSE para más detalles.
+Si me dices qué estás usando exactamente en el frontend (React/Vite, Next, puro HTML con `<script>`, etc.), puedo adaptarte el código justo al setup que tienes.

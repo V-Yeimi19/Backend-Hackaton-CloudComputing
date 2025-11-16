@@ -1,0 +1,58 @@
+service: alerta-utec-realtime
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  stage: production
+
+  # Usar rol existente del lab (no crear roles nuevos)
+  iam:
+    role: arn:aws:iam::645337731455:role/LabRole
+
+custom:
+  # 👉 NOMBRES DE TUS TABLAS YA CREADAS
+  connectionsTableName: Connections
+  incidentesTableName: Incidentes
+
+functions:
+  websocketConnect:
+    handler: websocket_connect.lambda_handler
+    environment:
+      CONNECTIONS_TABLE: ${self:custom.connectionsTableName}
+    events:
+      - websocket:
+          route: $connect
+
+  websocketDisconnect:
+    handler: websocket_disconnect.lambda_handler
+    environment:
+      CONNECTIONS_TABLE: ${self:custom.connectionsTableName}
+    events:
+      - websocket:
+          route: $disconnect
+
+  dynamoStreamBroadcast:
+    handler: dynamo_stream_broadcast.lambda_handler
+    environment:
+      CONNECTIONS_TABLE: ${self:custom.connectionsTableName}
+      WS_ENDPOINT:
+        Fn::Join:
+          - ''
+          - - 'https://'
+            - Ref: WebsocketsApi
+            - '.execute-api.'
+            - Ref: AWS::Region
+            - '.amazonaws.com/'
+            - ${sls:stage}
+    events:
+      - stream:
+          type: dynamodb
+          # ⚠️ AQUÍ VAS A PONER EL StreamArn DE TU TABLA "Incidentes"
+          arn: arn:aws:dynamodb:us-east-1:645337731455:table/Incidentes/stream/2025-11-16T15:12:50.923
+          maximumRetryAttempts: 3
+          startingPosition: LATEST
+
+resources:
+  Resources: {}
