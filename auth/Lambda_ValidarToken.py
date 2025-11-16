@@ -4,11 +4,21 @@ from datetime import datetime
 
 def lambda_handler(event, context):
     try:
+        # Debug: imprimir el evento completo
+        print("Event recibido:", json.dumps(event))
+
         # Parse del body si viene como string JSON
-        if isinstance(event.get('body'), str):
-            body = json.loads(event['body'])
+        if 'body' in event and event['body']:
+            if isinstance(event['body'], str):
+                body = json.loads(event['body'])
+            else:
+                body = event['body']
         else:
+            # Si no hay body, asumir que el event es el body directamente
             body = event
+
+        # Debug: imprimir el body parseado
+        print("Body parseado:", json.dumps(body))
 
         # Obtener token del body o del header Authorization
         token = body.get('token')
