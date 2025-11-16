@@ -3,16 +3,14 @@ frameworkVersion: '4'
 
 provider:
   name: aws
-  runtime: python3.12
+  runtime: python3.11          # 👈 igual, usa 3.11
   region: us-east-1
   stage: production
 
-  # Usar el mismo rol del lab (NO crea roles nuevos)
   iam:
     role: arn:aws:iam::645337731455:role/LabRole
 
 custom:
-  # Nombres de tus tablas ya existentes
   incidentesTableName: Incidentes
   historialTableName: t_historial
 
@@ -36,10 +34,25 @@ functions:
     events:
       - stream:
           type: dynamodb
-          # ⚠️ REEMPLAZA ESTO POR EL StreamArn REAL DE TU TABLA Incidentes
+          # 👇 StreamArn de la MISMA tabla Incidentes
           arn: arn:aws:dynamodb:us-east-1:645337731455:table/Incidentes/stream/2025-11-16T15:12:50.923
           startingPosition: LATEST
           maximumRetryAttempts: 3
 
 resources:
-  Resources: {}
+  Resources:
+    HistorialTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.historialTableName}
+        AttributeDefinitions:
+          - AttributeName: incidenteId
+            AttributeType: S
+          - AttributeName: changedAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: incidenteId
+            KeyType: HASH
+          - AttributeName: changedAt
+            KeyType: RANGE
+        BillingMode: PAY_PER_REQUEST

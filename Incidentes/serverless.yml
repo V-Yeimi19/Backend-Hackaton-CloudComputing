@@ -26,7 +26,8 @@ provider:
         - '*'
 
 custom:
-  incidentesTableName: tabla_incidentes
+  # 👇 AHORA TODO USA LA TABLA "Incidentes"
+  incidentesTableName: Incidentes
   usuariosTableName: tabla_usuarios
   tokensTableName: tokens_acceso
 
@@ -68,7 +69,7 @@ resources:
     TablaIncidentes:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:custom.incidentesTableName}
+        TableName: ${self:custom.incidentesTableName}   # 👈 Usa "Incidentes"
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
@@ -76,3 +77,5 @@ resources:
           - AttributeName: id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES

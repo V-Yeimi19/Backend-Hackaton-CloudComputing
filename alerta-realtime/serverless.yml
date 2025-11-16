@@ -3,16 +3,14 @@ frameworkVersion: '4'
 
 provider:
   name: aws
-  runtime: python3.12
+  runtime: python3.11          # 👈 usa 3.11 para tener boto3 incluido
   region: us-east-1
   stage: production
 
-  # Usar rol existente del lab (no crear roles nuevos)
   iam:
     role: arn:aws:iam::645337731455:role/LabRole
 
 custom:
-  # 👉 NOMBRES DE TUS TABLAS YA CREADAS
   connectionsTableName: Connections
   incidentesTableName: Incidentes
 
@@ -41,7 +39,7 @@ functions:
         Fn::Join:
           - ''
           - - 'https://'
-            - Ref: WebsocketsApi
+            - Ref: WebsocketsApi     # creado automáticamente por el evento websocket
             - '.execute-api.'
             - Ref: AWS::Region
             - '.amazonaws.com/'
@@ -49,10 +47,21 @@ functions:
     events:
       - stream:
           type: dynamodb
-          # ⚠️ AQUÍ VAS A PONER EL StreamArn DE TU TABLA "Incidentes"
+          # 👇 pon aquí el StreamArn REAL de tu tabla Incidentes
           arn: arn:aws:dynamodb:us-east-1:645337731455:table/Incidentes/stream/2025-11-16T15:12:50.923
           maximumRetryAttempts: 3
           startingPosition: LATEST
 
 resources:
-  Resources: {}
+  Resources:
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.connectionsTableName}
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
