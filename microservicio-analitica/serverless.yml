@@ -78,13 +78,15 @@
   functions:
 
     # ========== ANALÍTICA ==========
-    obtenerReportesActivos:
-      handler: analitica/obtenerReportesActivos.lambda_handler
-      events:
-        - http:
-            path: /analitica/reportes-activos
-            method: get
-            cors: true
+  obtenerReportesActivos:
+    handler: analitica/obtenerReportesActivos.lambda_handler
+    events:
+      - http:
+          path: /analitica/reportes-activos
+          method: get
+          cors: true
+          authorizer: none
+          authorizationType: NONE
 
     filtrarReportes:
       handler: analitica/filtrarReportes.lambda_handler
@@ -119,7 +121,7 @@
       events:
         - stream:
             type: dynamodb
-            arn: arn:aws:dynamodb:us-east-1:043280570137:table/alerta-utec-Reporte-dev/stream/2025-11-16T16:11:36.590
+            arn: arn:aws:dynamodb:us-east-1:043280570137:table/alerta-utec-Reporte-test/stream/2025-11-16T17:53:00.280
             batchSize: 10
             startingPosition: LATEST
             enabled: true
