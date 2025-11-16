@@ -10,7 +10,6 @@ provider:
   region: us-east-1
   iam:
     role: arn:aws:iam::413466751215:role/LabRole
-  kmsKeyArn: "arn:aws:kms:us-east-1:413466751215:alias/aws/lambda"
   environment:
     REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
     ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
