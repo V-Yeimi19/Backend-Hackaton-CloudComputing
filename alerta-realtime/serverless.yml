@@ -7,13 +7,14 @@ provider:
   region: us-east-1
   stage: production
 
-  # ⚠️ IMPORTANTE: usar un rol YA EXISTENTE (no crear uno nuevo)
+  # Usar rol existente del lab (no crear roles nuevos)
   iam:
     role: arn:aws:iam::645337731455:role/LabRole
 
 custom:
-  connectionsTableName: alerta-utec-connections-${sls:stage}
-  incidentesTableName: alerta-utec-incidentes-${sls:stage}
+  # 👉 NOMBRES DE TUS TABLAS YA CREADAS
+  connectionsTableName: Connections
+  incidentesTableName: Incidentes
 
 functions:
   websocketConnect:
@@ -48,37 +49,10 @@ functions:
     events:
       - stream:
           type: dynamodb
-          arn:
-            Fn::GetAtt:
-              - IncidentesTable
-              - StreamArn
+          # ⚠️ AQUÍ VAS A PONER EL StreamArn DE TU TABLA "Incidentes"
+          arn: arn:aws:dynamodb:us-east-1:645337731455:table/Incidentes/stream/2025-11-16T15:12:50.923
           maximumRetryAttempts: 3
           startingPosition: LATEST
 
 resources:
-  Resources:
-    ConnectionsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:custom.connectionsTableName}
-        AttributeDefinitions:
-          - AttributeName: connectionId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: connectionId
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-
-    IncidentesTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:custom.incidentesTableName}
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-        StreamSpecification:
-          StreamViewType: NEW_AND_OLD_IMAGES
+  Resources: {}
