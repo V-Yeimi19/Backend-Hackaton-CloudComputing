@@ -3,9 +3,10 @@ import json
 import os
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['REPORTES_TABLE'])
+table = dynamodb.Table(os.environ['INCIDENTES_TABLE'])
 
 def lambda_handler(event, context):
+    print(f"Evento recibido en obtenerReporte: {json.dumps(event)}")
     try:
         reporte_id = event['pathParameters']['id']
         
@@ -20,6 +21,7 @@ def lambda_handler(event, context):
                 },
                 'body': json.dumps({'error': 'Reporte no encontrado'})
             }
+        print(f"Reporte obtenido exitosamente: {json.dumps(response['Item'])}")
         
         return {
             'statusCode': 200,
@@ -31,6 +33,7 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
+        print(f"Error en obtenerReporte: {str(e)}")
         return {
             'statusCode': 500,
             'headers': {
@@ -39,4 +42,3 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({'error': str(e)})
         }
-

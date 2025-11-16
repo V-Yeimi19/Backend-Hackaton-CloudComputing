@@ -3,10 +3,11 @@ import json
 import os
 
 dynamodb = boto3.resource('dynamodb')
-table_reportes = dynamodb.Table(os.environ['REPORTES_TABLE'])
+table_reportes = dynamodb.Table(os.environ['INCIDENTES_TABLE'])
 table_asignaciones = dynamodb.Table(os.environ['ASIGNACIONES_TABLE'])
 
 def lambda_handler(event, context):
+    print(f"Evento recibido en eliminarReporte: {json.dumps(event)}")
     try:
         reporte_id = event['pathParameters']['id']
         
@@ -32,6 +33,7 @@ def lambda_handler(event, context):
         
         # Eliminar reporte
         table_reportes.delete_item(Key={'id': reporte_id})
+        print(f"Reporte eliminado exitosamente: {reporte_id}")
         
         return {
             'statusCode': 200,
@@ -43,6 +45,7 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
+        print(f"Error en eliminarReporte: {str(e)}")
         return {
             'statusCode': 500,
             'headers': {
@@ -51,4 +54,3 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({'error': str(e)})
         }
-

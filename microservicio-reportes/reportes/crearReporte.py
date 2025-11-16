@@ -5,9 +5,10 @@ import uuid
 from datetime import datetime
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['REPORTES_TABLE'])
+table = dynamodb.Table(os.environ['INCIDENTES_TABLE'])
 
 def lambda_handler(event, context):
+    print(f"Evento recibido en crearReporte: {json.dumps(event)}")
     try:
         body = json.loads(event.get('body', '{}'))
         
@@ -72,6 +73,7 @@ def lambda_handler(event, context):
         }
         
         table.put_item(Item=item)
+        print(f"Reporte creado exitosamente: {json.dumps(item)}")
         
         return {
             'statusCode': 201,
@@ -86,6 +88,7 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
+        print(f"Error en crearReporte: {str(e)}")
         return {
             'statusCode': 500,
             'headers': {

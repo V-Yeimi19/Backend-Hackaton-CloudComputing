@@ -3,9 +3,10 @@ import json
 import os
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['REPORTES_TABLE'])
+table = dynamodb.Table(os.environ['INCIDENTES_TABLE'])
 
 def lambda_handler(event, context):
+    print(f"Evento recibido en listarReportes: {json.dumps(event)}")
     try:
         # Obtener parámetros de query (opcionales)
         query_params = event.get('queryStringParameters') or {}
@@ -39,6 +40,7 @@ def lambda_handler(event, context):
         
         # Ordenar por fecha de creación (más recientes primero)
         reportes.sort(key=lambda x: x.get('FechaCreacion', ''), reverse=True)
+        print(f"Reportes listados exitosamente. Total: {len(reportes)}")
         
         return {
             'statusCode': 200,
@@ -53,6 +55,7 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
+        print(f"Error en listarReportes: {str(e)}")
         return {
             'statusCode': 500,
             'headers': {

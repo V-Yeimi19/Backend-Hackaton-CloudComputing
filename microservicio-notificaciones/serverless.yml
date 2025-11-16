@@ -5,16 +5,16 @@ provider:
   name: aws
   runtime: python3.12
   region: us-east-1
-  stage: production
+  stage: ${opt:stage, 'dev'}
 
   # Usar rol existente del lab (no crear roles nuevos)
   iam:
-    role: arn:aws:iam::645337731455:role/LabRole
+    role: arn:aws:iam::${env:AWS_ACCOUNT_ID}:role/LabRole
 
 custom:
   # 👉 NOMBRES DE TUS TABLAS YA CREADAS
-  connectionsTableName: Connections
-  incidentesTableName: Incidentes
+  connectionsTableName: alerta-utec-Reporte-${self:provider.stage}
+  incidentesTableName: alerta-utec-Reporte-${self:provider.stage}
 
 functions:
   websocketConnect:
@@ -49,8 +49,8 @@ functions:
     events:
       - stream:
           type: dynamodb
-          # ⚠️ AQUÍ VAS A PONER EL StreamArn DE TU TABLA "Incidentes"
-          arn: arn:aws:dynamodb:us-east-1:645337731455:table/Incidentes/stream/2025-11-16T15:12:50.923
+          # Se consume el ARN del stream exportado por el microservicio de reportes
+          arn: ${cf:alerta-utec-reportes-${self:provider.stage}.ReporteTableStreamArn}
           maximumRetryAttempts: 3
           startingPosition: LATEST
 

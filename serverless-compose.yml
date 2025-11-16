@@ -2,6 +2,14 @@
 # Gestiona múltiples microservicios de AlertaUTEC
 
 services:
+  # Microservicio de Autenticación
+  # Responsabilidad: Gestión de usuarios y tokens
+  autenticacion:
+    path: microservicio-autenticacion
+    params:
+      stage: ${opt:stage, 'dev'}
+      region: us-east-1
+
   # Microservicio de Reportes
   # Responsabilidad: Gestión CRUD de reportes e incidentes
   reportes:
@@ -9,6 +17,17 @@ services:
     params:
       stage: ${opt:stage, 'dev'}
       region: us-east-1
+
+  # Microservicio de Notificaciones en Tiempo Real
+  # Responsabilidad: Comunicación por WebSockets
+  # Depende de reportes porque consume su stream de DynamoDB
+  notificaciones:
+    path: microservicio-notificaciones
+    params:
+      stage: ${opt:stage, 'dev'}
+      region: us-east-1
+    dependsOn:
+      - reportes
 
   # Microservicio de Analítica
   # Responsabilidad: Análisis de datos, ingesta y consultas
@@ -19,5 +38,4 @@ services:
       stage: ${opt:stage, 'dev'}
       region: us-east-1
     dependsOn:
-      - reportes  # Se despliega después de reportes
-
+      - reportes

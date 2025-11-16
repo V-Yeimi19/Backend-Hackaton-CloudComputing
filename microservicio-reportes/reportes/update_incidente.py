@@ -5,10 +5,10 @@ import boto3
 from datetime import datetime
 from botocore.exceptions import ClientError
 
-INCIDENTES_TABLE = os.environ["INCIDENTES_TABLE"]
+REPORTES_TABLE = os.environ["REPORTES_TABLE"]
 
 dynamodb = boto3.resource("dynamodb")
-table = dynamodb.Table(INCIDENTES_TABLE)
+table = dynamodb.Table(REPORTES_TABLE)
 
 def lambda_handler(event, context):
     print("Event actualizarEstadoIncidente:", json.dumps(event))

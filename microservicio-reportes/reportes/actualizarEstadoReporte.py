@@ -4,9 +4,10 @@ import os
 from datetime import datetime
 
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table(os.environ['REPORTES_TABLE'])
+table = dynamodb.Table(os.environ['INCIDENTES_TABLE'])
 
 def lambda_handler(event, context):
+    print(f"Evento recibido en actualizarEstadoReporte: {json.dumps(event)}")
     try:
         reporte_id = event['pathParameters']['id']
         
@@ -65,6 +66,7 @@ def lambda_handler(event, context):
             ExpressionAttributeValues=expression_attribute_values,
             ReturnValues='ALL_NEW'
         )
+        print(f"Estado del reporte {reporte_id} actualizado a: {nuevo_estado}")
         
         # 4. Obtener y devolver el reporte actualizado
         updated_response = table.get_item(Key={'id': reporte_id})
@@ -82,6 +84,7 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
+        print(f"Error en actualizarEstadoReporte: {str(e)}")
         return {
             'statusCode': 500,
             'headers': {

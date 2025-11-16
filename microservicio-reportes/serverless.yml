@@ -9,10 +9,12 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: us-east-1
   iam:
-    role: arn:aws:iam::043280570137:role/LabRole
+    role: arn:aws:iam::${env:AWS_ACCOUNT_ID}:role/LabRole
   environment:
-    REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
+    INCIDENTES_TABLE: alerta-utec-Reporte-${self:provider.stage} # Renombrado para coincidir con el código
     ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
+    HISTORIAL_TABLE: t_historial
+    TABLE_USUARIOS : alerta-utec-Usuarios-${self:provider.stage}
 
 resources:
   Resources:
@@ -33,14 +35,14 @@ resources:
     #   * Objeto perdido
     # - Gravedad (String): Nivel de urgencia (debil, moderado, fuerte)
     # - Lugar (String): Ubicación del incidente
-    # - Estado (String): Estado del reporte (PENDIENTE, EN ARREGLO, SOLUCIONADO)
-    # - FechaCreacion (String): Timestamp ISO de creación
-    # - FechaActualizacion (String): Timestamp ISO de última actualización
+    # - estado (String): Estado del reporte (PENDIENTE, EN ARREGLO, SOLUCIONADO)
+    # - createdAt (String): Timestamp ISO de creación
+    # - updatedAt (String): Timestamp ISO de última actualización
     # ============================================
     ReporteTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.REPORTES_TABLE}
+        TableName: ${self:provider.environment.INCIDENTES_TABLE}
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
           - AttributeName: id
@@ -126,18 +128,37 @@ functions:
           cors: true
           integration: lambda-proxy
 
-  actualizarEstadoReporte:
-    handler: reportes/actualizarEstadoReporte.lambda_handler
+  actualizarEstadoIncidente:
+    handler: reportes/update_incidente.lambda_handler
     events:
       - http:
           path: /reportes/{id}/estado
-          method: patch
+          method: put
           cors: true
           integration: lambda-proxy
 
+  obtenerHistorial:
+    handler: reportes/Lambda_ObtenerHistorial.lambda_handler
+    events:
+      - http:
+          path: /reportes/{id}/historial
+          method: get
+          cors: true
+          integration: lambda-proxy
+
+  historialStream:
+    handler: reportes/historial_stream.lambda_handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt: [ ReporteTable, StreamArn ]
+          startingPosition: LATEST
+          maximumRetryAttempts: 3
+
   # ========== ASIGNACIONES ==========
   asignarResponsables:
-    handler: reportes/asignarResponsables.lambda_handler
+    handler: reportes/Lambda_GestionTrabajadores.lambda_handler
     events:
       - http:
           path: /reportes/{id}/asignar

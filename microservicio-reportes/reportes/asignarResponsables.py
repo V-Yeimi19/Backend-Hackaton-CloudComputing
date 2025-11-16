@@ -3,7 +3,7 @@ import json
 import os
 
 dynamodb = boto3.resource('dynamodb')
-table_reportes = dynamodb.Table(os.environ['REPORTES_TABLE'])
+table_reportes = dynamodb.Table(os.environ['INCIDENTES_TABLE'])
 table_asignaciones = dynamodb.Table(os.environ['ASIGNACIONES_TABLE'])
 
 def lambda_handler(event, context):
