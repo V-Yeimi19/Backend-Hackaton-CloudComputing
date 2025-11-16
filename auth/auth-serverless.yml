@@ -11,6 +11,7 @@ provider:
   environment:
     TABLE_USUARIOS: ${sls:stage}-t_usuarios_hack
     TABLE_TOKENS: ${sls:stage}-t_tokens_acceso
+    TABLE_HISTORIAL: ${sls:stage}-t_historial_incidentes
 
 functions:
   register:
@@ -40,6 +41,24 @@ functions:
           cors: true
           integration: lambda
 
+  actualizarIncidente:
+    handler: Lambda_ActualizarIncidente.lambda_handler
+    events:
+      - http:
+          path: /incidente/actualizar
+          method: put
+          cors: true
+          integration: lambda
+
+  obtenerHistorial:
+    handler: Lambda_ObtenerHistorial.lambda_handler
+    events:
+      - http:
+          path: /incidente/historial
+          method: get
+          cors: true
+          integration: lambda
+
 resources:
   Resources:
     TablaUsuarios:
@@ -63,5 +82,17 @@ resources:
             AttributeType: S
         KeySchema:
           - AttributeName: token
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    TablaHistorialIncidentes:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_HISTORIAL}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
