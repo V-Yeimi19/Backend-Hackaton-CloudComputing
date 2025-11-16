@@ -51,10 +51,8 @@ resources:
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
         Tags:
-          - Key: Project
-            Value: AlertaUTEC
-          - Key: Microservicio
-            Value: reportes
+            Project: AlertaUTEC
+            Microservicio: reportes
 
     # ============================================
     # TABLA: AsignacionResponsables
@@ -76,10 +74,8 @@ resources:
           - AttributeName: ReporteId
             KeyType: HASH
         Tags:
-          - Key: Project
-            Value: AlertaUTEC
-          - Key: Microservicio
-            Value: reportes
+            Project: AlertaUTEC
+            Microservicio: reportes
   Outputs:
     ReporteTableStreamArn:
       Description: "The ARN for the Reporte DynamoDB table stream"
