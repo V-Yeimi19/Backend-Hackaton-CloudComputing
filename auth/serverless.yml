@@ -17,7 +17,6 @@ provider:
   environment:
     TABLE_USUARIOS: ${sls:stage}-t_usuarios_hack
     TABLE_TOKENS: ${sls:stage}-t_tokens_acceso
-    TABLE_HISTORIAL: ${sls:stage}-t_historial_incidentes
     TABLE_INCIDENTES: alerta-utec-Reporte-${sls:stage}
     AIRFLOW_API_URL: ${self:custom.airflowApiUrl.${sls:stage}, self:custom.airflowApiUrl.default}
     LAMBDA_GESTION_TRABAJADORES: ${self:service}-${sls:stage}-gestionTrabajadores
@@ -142,10 +141,10 @@ resources:
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
 
-    TablaHistorialIncidentes:
+    TablaIncidentes:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.TABLE_HISTORIAL}
+        TableName: ${self:provider.environment.TABLE_INCIDENTES}
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
