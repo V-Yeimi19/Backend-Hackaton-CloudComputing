@@ -1,0 +1,126 @@
+org: yeimivarela
+service: api-authentication
+
+custom:
+  airflowApiUrl:
+    default: ${self:custom.apiGatewayUrl.${sls:stage}}
+    dev: ${self:custom.apiGatewayUrl.dev}
+    test: ${self:custom.apiGatewayUrl.test}
+    prod: ${self:custom.apiGatewayUrl.prod}
+  apiGatewayUrl:
+    dev: https://XXXXXX.execute-api.us-east-1.amazonaws.com/dev
+    test: https://XXXXXX.execute-api.us-east-1.amazonaws.com/test
+    prod: https://XXXXXX.execute-api.us-east-1.amazonaws.com/prod
+
+provider:
+  name: aws
+  runtime: python3.13
+  memorySize: 1024
+  timeout: 30
+  iam:
+    role: arn:aws:iam::985026482300:role/LabRole
+  environment:
+    TABLE_USUARIOS: ${sls:stage}-t_usuarios_hack
+    TABLE_TOKENS: ${sls:stage}-t_tokens_acceso
+    REPORTES_TABLE: alerta-utec-Reporte-${sls:stage}
+    AIRFLOW_API_URL: ${self:custom.airflowApiUrl.${sls:stage}, self:custom.airflowApiUrl.default}
+    LAMBDA_GESTION_TRABAJADORES: ${self:service}-${sls:stage}-gestionTrabajadores
+
+functions:
+  register:
+    handler: Lambda_CrearUsuario.lambda_handler
+    events:
+      - http:
+          path: /usuario/register
+          method: post
+          cors: true
+          integration: lambda
+
+  login:
+    handler: Lambda_LoginUsuario.lambda_handler
+    events:
+      - http:
+          path: /usuario/login
+          method: post
+          cors: true
+          integration: lambda
+
+  validateToken:
+    handler: Lambda_ValidarToken.lambda_handler
+    events:
+      - http:
+          path: /usuario/validate-token
+          method: post
+          cors: true
+          integration: lambda
+
+  gestionTrabajadores:
+    handler: Lambda_GestionTrabajadores.lambda_handler
+    events:
+      - http:
+          path: /incidente/asignar
+          method: post
+          cors: true
+          integration: lambda
+
+  actualizarIncidente:
+    handler: Lambda_ActualizarIncidente.lambda_handler
+    events:
+      - http:
+          path: /incidente/actualizar
+          method: put
+          cors: true
+          integration: lambda
+
+  obtenerHistorial:
+    handler: Lambda_ObtenerHistorial.lambda_handler
+    events:
+      - http:
+          path: /incidente/historial
+          method: get
+          cors: true
+          integration: lambda
+
+  airflowValidarCambio:
+    handler: Lambda_AirflowSimulator.lambda_handler
+    events:
+      - http:
+          path: /airflow/validar-cambio-estado
+          method: post
+          cors: true
+          integration: lambda
+
+  airflowEjecutarWorkflow:
+    handler: Lambda_AirflowSimulator.lambda_handler
+    events:
+      - http:
+          path: /airflow/ejecutar-workflow
+          method: post
+          cors: true
+          integration: lambda
+
+resources:
+  Resources:
+    TablaUsuarios:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_USUARIOS}
+        AttributeDefinitions:
+          - AttributeName: correo
+            AttributeType: S
+        KeySchema:
+          - AttributeName: correo
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+    TablaTokens:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_TOKENS}
+        AttributeDefinitions:
+          - AttributeName: token
+            AttributeType: S
+        KeySchema:
+          - AttributeName: token
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
