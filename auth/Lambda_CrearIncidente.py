@@ -1,18 +1,20 @@
 import boto3
 import json
 import uuid
+import os
 from datetime import datetime
 
-def calcular_prioridad(severity):
-    """Calcula la prioridad numérica basada en la severidad"""
-    prioridades = {
-        'Leve': 1,
-        'Moderado': 2,
-        'Grave': 3
-    }
-    return prioridades.get(severity, 2)
-
 def lambda_handler(event, context):
+    """
+    Lambda para crear un nuevo incidente en la tabla de DynamoDB.
+
+    Campos esperados en el body:
+    - UsuarioId: ID del usuario que reporta el incidente
+    - DescripcionCorta: Descripción breve del incidente
+    - Categoria: Tipo de incidente (Fugas, Calidad del Inmobiliario, etc.)
+    - Gravedad: Nivel de gravedad ('debil', 'moderado', 'fuerte')
+    - Lugar: Ubicación específica del incidente
+    """
     try:
         # Debug: imprimir el evento completo
         print("Event recibido:", json.dumps(event))
@@ -24,87 +26,98 @@ def lambda_handler(event, context):
             else:
                 body = event['body']
         else:
-            # Si no hay body, asumir que el event es el body directamente
             body = event
 
-        # Debug: imprimir el body parseado
         print("Body parseado:", body)
 
-        # Obtener los campos requeridos según la nueva estructura
-        user_id = body.get('userId')
-        description = body.get('description')
-        category = body.get('category')
-        severity = body.get('severity')
-        location = body.get('location')
-        assigned_area = body.get('assignedArea')
+        # Obtener los campos requeridos
+        usuario_id = body.get('UsuarioId')
+        descripcion_corta = body.get('DescripcionCorta')
+        categoria = body.get('Categoria')
+        gravedad = body.get('Gravedad')
+        lugar = body.get('Lugar')
 
         # Validar campos obligatorios
-        if not all([user_id, description, category, severity, location, assigned_area]):
+        if not all([usuario_id, descripcion_corta, categoria, gravedad, lugar]):
             return {
                 'statusCode': 400,
-                'body': {
-                    'error': 'Faltan campos requeridos: userId, description, category, severity, location, assignedArea'
-                }
+                'body': json.dumps({
+                    'error': 'Faltan campos requeridos: UsuarioId, DescripcionCorta, Categoria, Gravedad, Lugar'
+                })
             }
 
-        # Validar severity
-        if severity not in ['Leve', 'Moderado', 'Grave']:
+        # Validar gravedad
+        gravedades_validas = ['debil', 'moderado', 'fuerte']
+        if gravedad not in gravedades_validas:
             return {
                 'statusCode': 400,
-                'body': {
-                    'error': 'La severidad debe ser: Leve, Moderado o Grave'
-                }
+                'body': json.dumps({
+                    'error': f'Gravedad no válida. Debe ser uno de: {", ".join(gravedades_validas)}'
+                })
+            }
+
+        # Validar categoría
+        categorias_validas = [
+            'Fugas',
+            'Calidad del Inmobiliario',
+            'Limpieza y desorden',
+            'Calidad de los Servicios (Luz, Internet, Agua)',
+            'Aulas Cerradas',
+            'Objeto Perdido'
+        ]
+        if categoria not in categorias_validas:
+            return {
+                'statusCode': 400,
+                'body': json.dumps({
+                    'error': f'Categoría no válida. Debe ser una de: {", ".join(categorias_validas)}'
+                })
             }
 
         # Generar ID único para el incidente
         incidente_id = str(uuid.uuid4())
 
         # Fecha y hora actual en formato ISO
-        now = datetime.now()
-        created_at = now.isoformat()
-
-        # Calcular prioridad automática basada en severidad
-        priority = calcular_prioridad(severity)
+        fecha_actual = datetime.now().isoformat()
 
         # Conectar a DynamoDB
         dynamodb = boto3.resource('dynamodb')
-        import os
-        table_name = os.environ.get('TABLE_HISTORIAL', 't_historial_incidentes')
-        tabla_historial = dynamodb.Table(table_name)
+        tabla_incidentes = dynamodb.Table(os.environ['TABLE_INCIDENTES'])
 
-        # Crear registro del incidente con la estructura correcta
+        # Crear registro del incidente
         incidente = {
             'id': incidente_id,
-            'userId': user_id,
-            'description': description,
-            'category': category,
-            'severity': severity,
-            'location': location,
-            'assignedArea': assigned_area,
-            'status': 'Notificado',  # Estado inicial
-            'createdAt': created_at,
-            'updatedAt': created_at,
-            'priority': priority
+            'UsuarioId': usuario_id,
+            'DescripcionCorta': descripcion_corta,
+            'Categoria': categoria,
+            'Gravedad': gravedad,
+            'Lugar': lugar,
+            'Estado': 'Notificado',  # Estado inicial siempre es "Notificado"
+            'FechaCreacion': fecha_actual,
+            'FechaActualizacion': fecha_actual
         }
 
         # Guardar en DynamoDB
-        tabla_historial.put_item(Item=incidente)
+        tabla_incidentes.put_item(Item=incidente)
+
+        print(f"Incidente creado exitosamente con ID: {incidente_id}")
 
         # Retornar éxito
         return {
             'statusCode': 201,
-            'body': {
+            'body': json.dumps({
                 'message': 'Incidente creado exitosamente',
                 'incidente': incidente
-            }
+            })
         }
 
     except Exception as e:
         # Excepción y retornar un código de error HTTP 500
         print("Exception:", str(e))
+        import traceback
+        traceback.print_exc()
         return {
             'statusCode': 500,
-            'body': {
+            'body': json.dumps({
                 'error': str(e)
-            }
+            })
         }
