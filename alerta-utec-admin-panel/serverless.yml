@@ -1,0 +1,52 @@
+service: alerta-utec-admin-panel
+frameworkVersion: '4'
+
+org: darosv
+app: alerta-utec
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  stage: production
+
+  iam:
+    role: arn:aws:iam::645337731455:role/LabRole
+
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedMethods:
+        - OPTIONS
+        - GET
+      allowedHeaders:
+        - '*'
+
+custom:
+  incidentesTableName: Incidentes
+
+functions:
+  listarIncidentesActivos:
+    handler: listar_incidentes_activos.lambda_handler
+    environment:
+      INCIDENTES_TABLE: ${self:custom.incidentesTableName}
+    events:
+      - httpApi:
+          path: /admin/incidentes
+          method: get
+          # Query params de ejemplo:
+          # /admin/incidentes?estado=Reportado&nivelDeGravedad=Alta&areaResponsable=laboratorios
+
+  resumenIncidentes:
+    handler: resumen_incidentes.lambda_handler
+    environment:
+      INCIDENTES_TABLE: ${self:custom.incidentesTableName}
+    events:
+      - httpApi:
+          path: /admin/incidentes/resumen
+          method: get
+          # Devuelve conteos por estado, nivelDeGravedad, areaResponsable
+
+resources:
+  Resources: {}
