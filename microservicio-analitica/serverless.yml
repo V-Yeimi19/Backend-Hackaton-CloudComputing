@@ -67,7 +67,7 @@ functions:
     events:
       - stream:
           type: dynamodb
-          arn: arn:aws:dynamodb:us-east-1:043280570137:table/alerta-utec-Reporte-dev/stream/2025-11-16T14:04:55.557
+          arn: arn:aws:dynamodb:us-east-1:043280570137:table/alerta-utec-Reporte-dev/stream/2025-11-16T16:11:36.590
           batchSize: 10
           startingPosition: LATEST
           enabled: true
