@@ -6,6 +6,7 @@ provider:
   runtime: python3.13
   memorySize: 1024
   timeout: 30
+  stage: ${opt:stage, 'dev'}
   region: us-east-1
   iam:
     role:
