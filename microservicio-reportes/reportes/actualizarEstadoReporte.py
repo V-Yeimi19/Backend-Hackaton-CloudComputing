@@ -9,32 +9,8 @@ table = dynamodb.Table(os.environ['REPORTES_TABLE'])
 def lambda_handler(event, context):
     try:
         reporte_id = event['pathParameters']['id']
-        body = json.loads(event.get('body', '{}'))
         
-        if 'Estado' not in body:
-            return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': 'El campo Estado es requerido'})
-            }
-        
-        nuevo_estado = body['Estado']
-        estados_validos = ['PENDIENTE', 'EN ARREGLO', 'SOLUCIONADO']
-        
-        if nuevo_estado not in estados_validos:
-            return {
-                'statusCode': 400,
-                'headers': {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'body': json.dumps({'error': f'Estado inválido. Debe ser uno de: {", ".join(estados_validos)}'})
-            }
-        
-        # Verificar que el reporte existe
+        # 1. Obtener el reporte actual para verificar su estado
         response = table.get_item(Key={'id': reporte_id})
         if 'Item' not in response:
             return {
@@ -45,19 +21,52 @@ def lambda_handler(event, context):
                 },
                 'body': json.dumps({'error': 'Reporte no encontrado'})
             }
+            
+        item_actual = response['Item']
+        estado_actual = item_actual.get('Estado')
         
-        # Actualizar estado
+        # 2. Determinar el nuevo estado basado en el estado actual
+        nuevo_estado = ''
+        if estado_actual == 'Notificado':
+            nuevo_estado = 'En Proceso'
+        elif estado_actual == 'En Proceso':
+            nuevo_estado = 'Finalizado'
+        elif estado_actual == 'Finalizado':
+            # Si ya está finalizado, no hay nada que hacer
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'message': 'El reporte ya está finalizado, no se puede actualizar el estado.'})
+            }
+        else:
+            # Manejar estados no esperados o iniciales
+            return {
+                'statusCode': 400,
+                'headers': {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                },
+                'body': json.dumps({'error': f'El estado actual "{estado_actual}" no permite una transición automática.'})
+            }
+
+        # 3. Actualizar el estado en DynamoDB
+        update_expression = 'SET Estado = :estado, FechaActualizacion = :fecha'
+        expression_attribute_values = {
+            ':estado': nuevo_estado,
+            ':fecha': datetime.utcnow().isoformat()
+        }
+
         table.update_item(
             Key={'id': reporte_id},
-            UpdateExpression='SET Estado = :estado, FechaActualizacion = :fecha',
-            ExpressionAttributeValues={
-                ':estado': nuevo_estado,
-                ':fecha': datetime.utcnow().isoformat()
-            },
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values,
             ReturnValues='ALL_NEW'
         )
         
-        # Obtener el reporte actualizado
+        # 4. Obtener y devolver el reporte actualizado
         updated_response = table.get_item(Key={'id': reporte_id})
         
         return {
@@ -81,4 +90,3 @@ def lambda_handler(event, context):
             },
             'body': json.dumps({'error': str(e)})
         }
-

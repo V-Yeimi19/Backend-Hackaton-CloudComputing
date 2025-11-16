@@ -10,6 +10,7 @@ provider:
   region: us-east-1
   iam:
     role: arn:aws:iam::413466751215:role/LabRole
+  kmsKeyArn: "arn:aws:kms:us-east-1:413466751215:alias/aws/lambda"
   environment:
     REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
     ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
@@ -57,9 +58,7 @@ resources:
       Type: AWS::Glue::Crawler
       Properties:
         Name: ${self:service}-crawler-${self:provider.stage}
-        Role:
-          Fn::Sub:
-            - "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+        Role: arn:aws:iam::413466751215:role/LabRole
         DatabaseName: ${self:provider.environment.GLUE_DATABASE}
         Targets:
           S3Targets:
@@ -138,11 +137,9 @@ functions:
       - stream:
           type: dynamodb
           arn:
-            Fn::Sub:
-              - "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${self:provider.environment.REPORTES_TABLE}/stream/*"
+            Fn::ImportValue: alerta-utec-reportes-${self:provider.stage}-ReporteTableStreamArn
           batchSize: 10
           startingPosition: LATEST
           enabled: true
     timeout: 60
     memorySize: 512
-

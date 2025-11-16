@@ -10,6 +10,7 @@ provider:
   region: us-east-1
   iam:
     role: arn:aws:iam::413466751215:role/LabRole
+  kmsKeyArn: "arn:aws:kms:us-east-1:413466751215:alias/aws/lambda"
   environment:
     REPORTES_TABLE: alerta-utec-Reporte-${self:provider.stage}
     ASIGNACIONES_TABLE: alerta-utec-AsignacionResponsables-${self:provider.stage}
@@ -80,6 +81,13 @@ resources:
             Value: AlertaUTEC
           - Key: Microservicio
             Value: reportes
+  Outputs:
+    ReporteTableStreamArn:
+      Description: "The ARN for the Reporte DynamoDB table stream"
+      Value:
+        Fn::GetAtt: [ ReporteTable, StreamArn ]
+      Export:
+        Name: ${self:service}-${self:provider.stage}-ReporteTableStreamArn
 
 functions:
   # ========== REPORTES - CRUD ==========
