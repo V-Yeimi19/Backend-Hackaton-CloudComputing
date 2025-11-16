@@ -42,20 +42,18 @@ def lambda_handler(event, context):
         if not correo or not password:
             return {
                 'statusCode': 400,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'Faltan campos requeridos: correo y password'
-                })
+                }
             }
 
         # Validar correo institucional
         if not validar_correo_utec(correo):
             return {
                 'statusCode': 400,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'El correo debe ser institucional de UTEC (@utec.edu.pe)'
-                })
+                }
             }
 
         # Hashear la contraseña ingresada
@@ -73,10 +71,9 @@ def lambda_handler(event, context):
         if 'Item' not in response:
             return {
                 'statusCode': 403,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'Usuario no existe'
-                })
+                }
             }
 
         # Verificar contraseña
@@ -86,10 +83,9 @@ def lambda_handler(event, context):
         if hashed_password != hashed_password_bd:
             return {
                 'statusCode': 403,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'Contraseña incorrecta'
-                })
+                }
             }
 
         # Generar token de acceso
@@ -111,8 +107,7 @@ def lambda_handler(event, context):
         # Retornar éxito con información del usuario
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({
+            'body': {
                 'message': 'Login exitoso',
                 'token': token,
                 'expires': registro_token['expires'],
@@ -123,7 +118,7 @@ def lambda_handler(event, context):
                     'role': user_data['role'],
                     'area_trabajo': user_data['area_trabajo']
                 }
-            })
+            }
         }
 
     except Exception as e:

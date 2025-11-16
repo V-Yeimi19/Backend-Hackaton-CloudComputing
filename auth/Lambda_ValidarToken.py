@@ -34,9 +34,9 @@ def lambda_handler(event, context):
             return {
                 'statusCode': 400,
                 'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'Token no proporcionado. Envíalo en el body o en el header Authorization'
-                })
+                }
             }
 
         # Conectar a DynamoDB
@@ -51,11 +51,10 @@ def lambda_handler(event, context):
         if 'Item' not in response:
             return {
                 'statusCode': 401,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'Token inválido',
                     'valid': False
-                })
+                }
             }
 
         # Obtener datos del token
@@ -69,12 +68,11 @@ def lambda_handler(event, context):
         if fecha_actual > fecha_expiracion:
             return {
                 'statusCode': 401,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body': {
                     'error': 'Token expirado',
                     'valid': False,
                     'expired': True
-                })
+                }
             }
 
         # Obtener información del usuario
@@ -85,11 +83,10 @@ def lambda_handler(event, context):
         if 'Item' not in user_response:
             return {
                 'statusCode': 404,
-                'headers': {'Content-Type': 'application/json'},
-                'body': json.dumps({
+                'body':{
                     'error': 'Usuario no encontrado',
                     'valid': False
-                })
+                }
             }
 
         user_data = user_response['Item']
@@ -97,8 +94,7 @@ def lambda_handler(event, context):
         # Token válido y activo
         return {
             'statusCode': 200,
-            'headers': {'Content-Type': 'application/json'},
-            'body': json.dumps({
+            'body': {
                 'message': 'Token válido',
                 'valid': True,
                 'user': {
@@ -109,7 +105,7 @@ def lambda_handler(event, context):
                     'area_trabajo': user_data['area_trabajo']
                 },
                 'token_expires': expires
-            })
+            }
         }
 
     except Exception as e:
