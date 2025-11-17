@@ -67,7 +67,7 @@ Resources:
           Image: !Ref AirflowImageUri
           Essential: true
           Command:
-            - "webserver"
+            - "standalone"           # airflow standalone (webserver + scheduler + db init)
           PortMappings:
             - ContainerPort: 8080
               Protocol: tcp
