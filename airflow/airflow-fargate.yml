@@ -1,10 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Airflow en ECS Fargate para orquestar incidentes Alerta UTEC
+Description: "Airflow en ECS Fargate para orquestar incidentes Alerta UTEC"
 
 Parameters:
   AirflowImageUri:
     Type: String
-    Description: "URI de la imagen de Airflow en ECR (ej: 6453...dkr.ecr.us-east-1.amazonaws.com/alerta-utec-airflow:latest)"
+    Description: "URI de la imagen de Airflow en ECR (ej: 645337731455.dkr.ecr.us-east-1.amazonaws.com/alerta-utec-airflow:latest)"
 
   VpcId:
     Type: String
@@ -35,6 +35,10 @@ Parameters:
     Default: Incidentes
     Description: "Nombre de la tabla DynamoDB de incidentes"
 
+  TaskExecutionRoleArn:
+    Type: String
+    Description: "ARN del rol IAM que usará la ECS Task (por ejemplo LabRole)"
+
 Resources:
   AirflowLogGroup:
     Type: AWS::Logs::LogGroup
@@ -47,26 +51,6 @@ Resources:
     Properties:
       ClusterName: alerta-utec-airflow-cluster
 
-  AirflowTaskExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: alerta-utec-airflow-task-execution-role
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - ecs-tasks.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-        - arn:aws:iam::aws:policy/AmazonSESFullAccess
-        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
-        # Ajusta permisos según lo que realmente uses
-
   AirflowTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -76,8 +60,8 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !GetAtt AirflowTaskExecutionRole.Arn
-      TaskRoleArn: !GetAtt AirflowTaskExecutionRole.Arn
+      ExecutionRoleArn: !Ref TaskExecutionRoleArn
+      TaskRoleArn: !Ref TaskExecutionRoleArn
       ContainerDefinitions:
         - Name: airflow-webserver
           Image: !Ref AirflowImageUri
@@ -129,9 +113,9 @@ Resources:
 
 Outputs:
   AirflowClusterName:
-    Description: Nombre del cluster ECS
+    Description: "Nombre del cluster ECS"
     Value: !Ref AirflowCluster
 
   AirflowServiceName:
-    Description: Nombre del servicio ECS
+    Description: "Nombre del servicio ECS"
     Value: !Ref AirflowService
