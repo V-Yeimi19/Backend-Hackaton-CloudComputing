@@ -1,0 +1,102 @@
+{
+  "family": "airflow-alerta-utec",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "1024",
+  "memory": "2048",
+  "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/LabRole",
+  "containerDefinitions": [
+    {
+      "name": "airflow-webserver",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/airflow-alerta-utec:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "AIRFLOW__CORE__EXECUTOR",
+          "value": "LocalExecutor"
+        },
+        {
+          "name": "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
+          "value": "postgresql+psycopg2://airflow:airflow@postgres.airflow.svc.cluster.local/airflow"
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "INCIDENTES_TABLE",
+          "value": "Incidentes"
+        },
+        {
+          "name": "USUARIOS_TABLE",
+          "value": "tabla_usuarios"
+        },
+        {
+          "name": "LAMBDA_API_URL",
+          "value": "${LAMBDA_API_URL}"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/airflow-alerta-utec",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "webserver"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3
+      }
+    },
+    {
+      "name": "airflow-scheduler",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/airflow-alerta-utec:latest",
+      "essential": true,
+      "command": ["scheduler"],
+      "environment": [
+        {
+          "name": "AIRFLOW__CORE__EXECUTOR",
+          "value": "LocalExecutor"
+        },
+        {
+          "name": "AIRFLOW__DATABASE__SQL_ALCHEMY_CONN",
+          "value": "postgresql+psycopg2://airflow:airflow@postgres.airflow.svc.cluster.local/airflow"
+        },
+        {
+          "name": "AWS_DEFAULT_REGION",
+          "value": "us-east-1"
+        },
+        {
+          "name": "INCIDENTES_TABLE",
+          "value": "Incidentes"
+        },
+        {
+          "name": "USUARIOS_TABLE",
+          "value": "tabla_usuarios"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/airflow-alerta-utec",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "scheduler"
+        }
+      }
+    }
+  ]
+}
+

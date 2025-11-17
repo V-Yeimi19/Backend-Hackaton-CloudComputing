@@ -1,0 +1,22 @@
+# Archivos de entorno con credenciales (NUNCA committear)
+.env
+.env.local
+.env.*.local
+
+# Logs de Airflow
+logs/
+*.log
+
+# Plugins de Airflow
+plugins/__pycache__/
+
+# Configuración local
+config/airflow_local_settings.py
+
+# Archivos temporales
+*.pyc
+__pycache__/
+*.swp
+*.bak
+.DS_Store
+

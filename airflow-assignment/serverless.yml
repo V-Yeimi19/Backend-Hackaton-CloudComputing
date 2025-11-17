@@ -1,0 +1,54 @@
+service: alerta-utec-airflow-assignment
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  stage: ${env:STAGE, 'production'}
+
+  iam:
+    role: arn:aws:iam::${env:AWS_ACCOUNT_ID, '645337731455'}:role/LabRole
+
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedMethods:
+        - OPTIONS
+        - GET
+        - PUT
+      allowedHeaders:
+        - '*'
+
+custom:
+  incidentesTableName: Incidentes
+  usuariosTableName: tabla_usuarios
+
+functions:
+  # Lambda para asignar incidente a empleado (llamado por Airflow)
+  asignarIncidenteEmpleado:
+    handler: asignar_incidente_empleado.lambda_handler
+    environment:
+      INCIDENTES_TABLE: ${self:custom.incidentesTableName}
+      USUARIOS_TABLE: ${self:custom.usuariosTableName}
+    events:
+      - httpApi:
+          path: /incidentes/{id}/asignar-empleado
+          method: put
+
+  # Lambda para que empleado vea sus incidentes
+  listarIncidentesEmpleado:
+    handler: listar_incidentes_empleado.lambda_handler
+    environment:
+      INCIDENTES_TABLE: ${self:custom.incidentesTableName}
+      USUARIOS_TABLE: ${self:custom.usuariosTableName}
+    events:
+      - httpApi:
+          path: /incidentes/empleado
+          method: get
+          # Query params: ?empleadoEmail=xxx&tipo=asignados|disponibles|todos
+
+resources:
+  Resources: {}
+
