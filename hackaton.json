@@ -1,0 +1,211 @@
+{
+	"info": {
+		"_postman_id": "1e5f1d83-4d5c-43a3-8b6c-abfaea4627ee",
+		"name": "endotoend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43479205",
+		"_collection_link": "https://warped-rocket-122539.postman.co/workspace/Working_with_Spring~154b8c6d-1137-4c67-80f9-15b3f6cbb026/collection/43479205-1e5f1d83-4d5c-43a3-8b6c-abfaea4627ee?action=share&source=collection_link&creator=43479205"
+	},
+	"item": [
+		{
+			"name": "REgister",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"alguien@utec.edu.pe\",\n  \"password\": \"123456\",\n  \"rol\": \"administrativo\",\n  \"area\": \"laboratorios\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://t0j3621dni.execute-api.us-east-1.amazonaws.com/usuarios",
+					"protocol": "https",
+					"host": [
+						"t0j3621dni",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"usuarios"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://t0j3621dni.execute-api.us-east-1.amazonaws.com/login",
+					"protocol": "https",
+					"host": [
+						"t0j3621dni",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Crear_Incidente",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "a36f099f-010c-4554-afd6-9ae301fe2163",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"estado\": \"Reportado\",\n  \"nivelDeGravedad\": \"Alta\",\n  \"descripcion\": \"Se rompió una ventana\",\n  \"ubicacion\": \"Pabellón A\",\n  \"piso\": \"3\",\n  \"categoria\": \"Seguridad\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://xzvr9v0w86.execute-api.us-east-1.amazonaws.com/incidentes",
+					"protocol": "https",
+					"host": [
+						"xzvr9v0w86",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"incidentes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ELiminar Incidente",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "a36f099f-010c-4554-afd6-9ae301fe2163",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "https://xzvr9v0w86.execute-api.us-east-1.amazonaws.com/incidentes/{id}",
+					"protocol": "https",
+					"host": [
+						"xzvr9v0w86",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"incidentes",
+						"{id}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "WebSocketCconnection",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "UpdateEstado",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"estado\": \"Finalizado\",\n  \"nivelDeGravedad\": \"Alta\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://qtnopzqirh.execute-api.us-east-1.amazonaws.com/incidentes/e8744167-a850-4b33-ac01-ea9d7eb41e78/estado",
+					"protocol": "https",
+					"host": [
+						"qtnopzqirh",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"incidentes",
+						"e8744167-a850-4b33-ac01-ea9d7eb41e78",
+						"estado"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GetANlytica_Incidentes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://8ht5ra7jbl.execute-api.us-east-1.amazonaws.com/admin/incidentes",
+					"protocol": "https",
+					"host": [
+						"8ht5ra7jbl",
+						"execute-api",
+						"us-east-1",
+						"amazonaws",
+						"com"
+					],
+					"path": [
+						"admin",
+						"incidentes"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

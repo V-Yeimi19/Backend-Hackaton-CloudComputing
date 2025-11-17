@@ -1,0 +1,32 @@
+# Serverless Compose - Despliegue de todos los servicios
+# Uso: serverless deploy (desde este directorio)
+
+services:
+  # 1. Servicio de seguridad y usuarios (crea tablas de usuarios y tokens)
+  seguridad-usuarios:
+    path: seguridad-usuarios
+
+  # 2. Servicio de incidentes (crea tabla de incidentes)
+  incidentes:
+    path: Incidentes
+    dependsOn:
+      - seguridad-usuarios
+
+  # 3. API de actualización de incidentes (usa tabla de incidentes y stream)
+  alerta-incidentes-api:
+    path: alerta-incidentes-api
+    dependsOn:
+      - incidentes
+
+  # 4. Panel de administración (usa tabla de incidentes)
+  alerta-utec-admin-panel:
+    path: alerta-utec-admin-panel
+    dependsOn:
+      - incidentes
+
+  # 5. Servicio de tiempo real (usa stream de incidentes)
+  alerta-realtime:
+    path: alerta-realtime
+    dependsOn:
+      - incidentes
+

@@ -1,17 +1,17 @@
 service: alerta-utec-incidentes
 frameworkVersion: '4'
 
-org: darosv
+org: ${env:SLS_ORG, 'darosv'}
 app: alerta-utec
 
 provider:
   name: aws
   runtime: python3.11
   region: us-east-1
-  stage: production
+  stage: ${env:STAGE, 'production'}
 
   iam:
-    role: arn:aws:iam::645337731455:role/LabRole
+    role: arn:aws:iam::${env:AWS_ACCOUNT_ID, '645337731455'}:role/LabRole
 
   httpApi:
     cors:
