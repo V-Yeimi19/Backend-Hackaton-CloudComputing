@@ -66,8 +66,10 @@ Resources:
         - Name: airflow-webserver
           Image: !Ref AirflowImageUri
           Essential: true
-          Command:
-            - "standalone"           # airflow standalone (webserver + scheduler + db init)
+          EntryPoint:          # 👈 Forzamos a usar el binario airflow
+            - "airflow"
+          Command:             # 👈 y le pasamos el subcomando standalone
+            - "standalone"
           PortMappings:
             - ContainerPort: 8080
               Protocol: tcp
