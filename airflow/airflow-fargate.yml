@@ -51,7 +51,7 @@ Resources:
     Properties:
       ClusterName: alerta-utec-airflow-cluster
 
-  AirflowTaskDefinition:
+    AirflowTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       Family: alerta-utec-airflow-task
@@ -66,6 +66,8 @@ Resources:
         - Name: airflow-webserver
           Image: !Ref AirflowImageUri
           Essential: true
+          Command:
+            - "webserver"          # 👈 NUEVO
           PortMappings:
             - ContainerPort: 8080
               Protocol: tcp
@@ -78,8 +80,9 @@ Resources:
               Value: !Ref IncidentesTableName
             - Name: AWS_REGION
               Value: !Ref AWS::Region
+            # Config mínima de Airflow para que arranque
             - Name: AIRFLOW__CORE__EXECUTOR
-              Value: LocalExecutor
+              Value: SequentialExecutor   # 👈 mejor que LocalExecutor sin DB externa
             - Name: AIRFLOW__CORE__LOAD_EXAMPLES
               Value: 'False'
             - Name: AIRFLOW__WEBSERVER__RBAC
@@ -90,6 +93,7 @@ Resources:
               awslogs-group: !Ref AirflowLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: airflow
+
 
   AirflowService:
     Type: AWS::ECS::Service

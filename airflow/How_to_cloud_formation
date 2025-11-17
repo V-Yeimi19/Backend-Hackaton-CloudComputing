@@ -11,4 +11,4 @@ aws cloudformation deploy \
     IncidentesApiBase="https://qtnopzqirh.execute-api.us-east-1.amazonaws.com" \
     AdminApiBase="https://8ht5ra7jbl.execute-api.us-east-1.amazonaws.com" \
     IncidentesTableName=Incidentes \
-    TaskExecutionRoleArn="arn:aws:iam::645337731455:role/LabRole"   # <-- ejemplo
+    TaskExecutionRoleArn="arn:aws:iam::645337731455:role/LabRole"
