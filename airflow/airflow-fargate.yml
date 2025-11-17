@@ -70,7 +70,6 @@ Resources:
             - ContainerPort: 8080
               Protocol: tcp
           Environment:
-            # Variables para tu DAG
             - Name: INCIDENTES_API_BASE
               Value: !Ref IncidentesApiBase
             - Name: ADMIN_API_BASE
@@ -79,7 +78,6 @@ Resources:
               Value: !Ref IncidentesTableName
             - Name: AWS_REGION
               Value: !Ref AWS::Region
-            # Config mínima de Airflow para que arranque
             - Name: AIRFLOW__CORE__EXECUTOR
               Value: LocalExecutor
             - Name: AIRFLOW__CORE__LOAD_EXAMPLES

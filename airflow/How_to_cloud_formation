@@ -10,4 +10,5 @@ aws cloudformation deploy \
     AirflowSecurityGroupId=sg-0d4a98e71dbf5a877 \
     IncidentesApiBase="https://qtnopzqirh.execute-api.us-east-1.amazonaws.com" \
     AdminApiBase="https://8ht5ra7jbl.execute-api.us-east-1.amazonaws.com" \
-    IncidentesTableName=Incidentes
+    IncidentesTableName=Incidentes \
+    TaskExecutionRoleArn="arn:aws:iam::645337731455:role/LabRole"   # <-- ejemplo
