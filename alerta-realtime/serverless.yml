@@ -8,7 +8,7 @@ provider:
   stage: ${env:STAGE, 'production'}
 
   iam:
-    role: arn:aws:dynamodb:us-east-1:383544022422:table/Incidentes/stream/2025-11-17T02:15:55.818
+    role: arn:aws:iam::${env:AWS_ACCOUNT_ID, '645337731455'}:role/LabRole
 
 custom:
   connectionsTableName: Connections
