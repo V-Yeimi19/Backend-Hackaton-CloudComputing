@@ -1,0 +1,13 @@
+aws cloudformation deploy \
+  --stack-name alerta-utec-airflow \
+  --template-file airflow-fargate.yml \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --parameter-overrides \
+    AirflowImageUri=645337731455.dkr.ecr.us-east-1.amazonaws.com/alerta-utec-airflow:latest \
+    VpcId=vpc-04d9b303c6d6b99c1 \
+    Subnet1Id=subnet-02efd6c83d5feab6f \
+    Subnet2Id=subnet-096d63c9c5e394437 \
+    AirflowSecurityGroupId=sg-0d4a98e71dbf5a877 \
+    IncidentesApiBase="https://qtnopzqirh.execute-api.us-east-1.amazonaws.com" \
+    AdminApiBase="https://8ht5ra7jbl.execute-api.us-east-1.amazonaws.com" \
+    IncidentesTableName=Incidentes
