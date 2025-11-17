@@ -27,8 +27,19 @@ if ! command_exists docker; then
     exit 1
 fi
 
-if ! command_exists docker-compose; then
-    echo -e "${RED}❌ Docker Compose no está instalado. Por favor instálalo primero.${NC}"
+# Verificar docker-compose (puede ser 'docker-compose' o 'docker compose')
+DOCKER_COMPOSE_CMD=""
+if command_exists docker-compose; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+elif docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker compose"
+    echo -e "${YELLOW}ℹ️  Usando 'docker compose' (versión nueva)${NC}"
+else
+    echo -e "${RED}❌ Docker Compose no está instalado.${NC}"
+    echo -e "${YELLOW}📦 Instalación rápida:${NC}"
+    echo -e "   ${GREEN}sudo apt-get update && sudo apt-get install -y docker.io docker-compose${NC}"
+    echo -e "   ${GREEN}sudo usermod -aG docker \$USER${NC}"
+    echo -e "   ${GREEN}newgrp docker${NC}"
     exit 1
 fi
 
@@ -179,17 +190,17 @@ fi
 
 # Construir imágenes Docker
 echo -e "${BLUE}🔨 Construyendo imágenes Docker (esto puede tardar varios minutos)...${NC}"
-docker-compose build
+$DOCKER_COMPOSE_CMD build
 echo -e "${GREEN}✅ Imágenes construidas${NC}\n"
 
 # Inicializar Airflow
 echo -e "${BLUE}🔧 Inicializando Airflow (creando base de datos y usuario admin)...${NC}"
-docker-compose up airflow-init
+$DOCKER_COMPOSE_CMD up airflow-init
 echo -e "${GREEN}✅ Airflow inicializado${NC}\n"
 
 # Iniciar servicios
 echo -e "${BLUE}🚀 Iniciando servicios de Airflow...${NC}"
-docker-compose up -d
+$DOCKER_COMPOSE_CMD up -d
 echo -e "${GREEN}✅ Servicios iniciados${NC}\n"
 
 # Esperar a que los servicios estén listos
@@ -198,7 +209,7 @@ sleep 30
 
 # Verificar estado
 echo -e "${BLUE}🔍 Verificando estado de los servicios...${NC}"
-docker-compose ps
+$DOCKER_COMPOSE_CMD ps
 
 # Verificar que el webserver está respondiendo
 echo -e "\n${BLUE}🌐 Verificando que el webserver está funcionando...${NC}"
@@ -229,7 +240,6 @@ echo -e "${GREEN}═════════════════════
 
 # Mostrar logs recientes
 echo -e "${BLUE}📋 Últimos logs del scheduler:${NC}"
-docker-compose logs --tail=20 airflow-scheduler
+$DOCKER_COMPOSE_CMD logs --tail=20 airflow-scheduler
 
 echo -e "\n${GREEN}✨ ¡Listo! Airflow está ejecutándose.${NC}\n"
-
