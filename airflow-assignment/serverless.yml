@@ -8,7 +8,7 @@ provider:
   stage: ${env:STAGE, 'production'}
 
   iam:
-    role: arn:aws:iam::${env:AWS_ACCOUNT_ID, '645337731455'}:role/LabRole
+    role: arn:aws:iam::${env:AWS_ACCOUNT_ID, '383544022422'}:role/LabRole
 
   httpApi:
     cors:
